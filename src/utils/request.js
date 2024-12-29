@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // 创建 Axios 实例
 const service = axios.create({
-    baseURL: import.meta.env.VUE_APP_BASE_API || '/', // 基础路径，支持环境变量
-    timeout: 10000, // 请求超时时间
+    baseURL: import.meta.env.VITE_API_URL,
+    timeout: 5000,
 });
 
 // 请求拦截器

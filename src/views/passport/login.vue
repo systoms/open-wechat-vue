@@ -68,14 +68,19 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { User, Lock } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { login } from '@/api/auth'
+import md5 from 'md5'
 
+const router = useRouter()
 const loginFormRef = ref(null)
 const loading = ref(false)
 const rememberMe = ref(false)
 
 const loginForm = reactive({
-  username: '',
-  password: ''
+  username: '13108390916:1234567890',
+  password: '123456'
 })
 
 const rules = {
@@ -87,15 +92,56 @@ const handleLogin = async () => {
   if (!loginFormRef.value) return
   
   try {
-    loading.value = true
+    // 表单验证
     await loginFormRef.value.validate()
-    // TODO: 实现登录逻辑
+    
+    loading.value = true
+    
+    // 调用登录接口
+    const { data } = await login({
+      username: loginForm.username,
+      password: md5(loginForm.password),
+      remember: rememberMe.value
+    })
+    
+    // 登录成功
+    ElMessage.success('登录成功')
+    
+    // 保存token
+    localStorage.setItem('token', data.token)
+    
+    // 记住密码
+    if (rememberMe.value) {
+      localStorage.setItem('username', loginForm.username)
+      localStorage.setItem('password', loginForm.password)
+    } else {
+      localStorage.removeItem('username')
+      localStorage.removeItem('password')
+    }
+    
+    // 跳转到首页
+    router.push('/')
+    
   } catch (error) {
-    console.error('登录失败', error)
+    console.error('登录失败:', error)
+    ElMessage.error(error.message || '登录失败')
   } finally {
     loading.value = false
   }
 }
+
+// 页面加载时，如果有记住的账号密码则自动填充
+const initRememberMe = () => {
+  const username = localStorage.getItem('username')
+  const password = localStorage.getItem('password')
+  if (username && password) {
+    loginForm.username = username
+    loginForm.password = password
+    rememberMe.value = true
+  }
+}
+
+initRememberMe()
 </script>
 
 <style lang="less" scoped>
@@ -155,6 +201,7 @@ const handleLogin = async () => {
           font-size: 28px;
           margin-bottom: 10px;
           background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+          background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }

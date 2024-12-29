@@ -1,5 +1,87 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import {ref, onMounted, onUnmounted, computed} from 'vue';
+import {useMenuStore} from '@/store/system'
+import {getInfo} from '@/api/permission/user'
+import {useRouter} from 'vue-router'
+import {useTabStore} from '@/store/tab'
+import { ElMessageBox } from 'element-plus'
+import { logout } from '@/api/auth'
+import { removeToken } from '@/utils/auth'
+
+const menuStore = useMenuStore()
+const activeTopMenu = computed(() => menuStore.currentTopMenu?.id)
+const router = useRouter()
+const tabStore = useTabStore()
+const company = ref({name: ''})
+const user = ref({rand_id: '', fullname: ''})
+
+// 获取用户信息和菜单
+const initUserInfo = async () => {
+  try {
+    const {data} = await getInfo()
+    // 设置顶部菜单
+    menuStore.setTopMenus(data.menus)
+    company.value = data.company;
+    user.value = data.user;
+
+    // 根据当前路由找到对应的顶级菜单并设置
+    const currentPath = router.currentRoute.value.path
+    const currentTopMenu = findTopMenuByPath(currentPath, data.menus)
+    if (currentTopMenu) {
+      menuStore.setCurrentTopMenu(currentTopMenu)
+
+      // 查找当前路由对应的具体菜单项
+      const findCurrentMenu = (menus) => {
+        for (const menu of menus) {
+          if (menu.redirect === currentPath) return menu
+          if (menu.children?.length) {
+            const found = menu.children.find(child => {
+              if (child.redirect === currentPath) return true
+              if (child.children?.length) {
+                return child.children.some(grandChild => grandChild.redirect === currentPath)
+              }
+              return false
+            })
+            if (found) return found
+          }
+        }
+        return null
+      }
+
+      // 添加初始 tab
+      const currentMenu = findCurrentMenu(data.menus)
+      if (currentMenu) {
+        tabStore.addTab({
+          path: currentMenu.redirect,
+          title: currentMenu.label,
+          name: currentMenu.label
+        })
+      }
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+  }
+}
+
+// 根据路由路径查找对应的顶级菜单
+const findTopMenuByPath = (path, menus) => {
+  if (!menus?.length) return null
+
+  for (const menu of menus) {
+    if (menu.redirect === path) return menu
+    if (menu.children?.length) {
+      const hasPath = menu.children.some(child => {
+        if (child.redirect === path) return true
+        if (child.children?.length) {
+          return child.children.some(grandChild => grandChild.redirect === path)
+        }
+        return false
+      })
+      if (hasPath) return menu
+    }
+  }
+  return null
+}
 
 function sidebarToggle() {
   // 获取 body 元素
@@ -38,6 +120,62 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
+
+// 切换顶部菜单
+const handleTopMenuClick = (menu) => {
+  menuStore.setCurrentTopMenu(menu)
+  // 如果有默认重定向路由，则跳转并添加 tab
+  if (menu.redirect) {
+    const tab = {
+      path: menu.redirect,
+      title: menu.label,
+      name: menu.label
+    }
+    tabStore.addTab(tab)
+    tabStore.setActiveTab(tab.name) // 设置当前激活的标签
+    router.push(menu.redirect)
+  } else if (menu.children?.[0]?.redirect) {
+    // 如果没有重定向但有子菜单，跳转到第一个子菜单
+    const firstChild = menu.children[0]
+    const tab = {
+      path: firstChild.redirect,
+      title: firstChild.label,
+      name: firstChild.label
+    }
+    tabStore.addTab(tab)
+    tabStore.setActiveTab(tab.name) // 设置当前激活的标签
+    router.push(firstChild.redirect)
+  }
+}
+
+// 处理退出登录
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出系统吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await logout()
+      // 清除 token
+      removeToken()
+      // 清除 tabStore
+      tabStore.clearTabs()
+      // 清除菜单状态
+      menuStore.clearMenus()
+      // 跳转到登录页
+      router.push('/passport/login')
+    } catch (error) {
+      console.error('退出失败:', error)
+    }
+  }).catch(() => {
+    // 取消退出
+  })
+}
+
+onMounted(() => {
+  initUserInfo()
+})
 </script>
 <template>
   <header class="main-header">
@@ -57,6 +195,17 @@ onUnmounted(() => {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </a>
+      <div class="collapse navbar-collapse pull-left">
+        <ul class="nav navbar-nav">
+          <li v-for="menu in menuStore.topMenus"
+              :key="menu.id"
+              :class="{ active: activeTopMenu === menu.id }">
+            <a href="#" @click.prevent="handleTopMenuClick(menu)">
+              {{ menu.label }}
+            </a>
+          </li>
+        </ul>
+      </div>
 
       <div class="navbar-custom-menu">
         <ul class="nav navbar-nav">
@@ -147,15 +296,15 @@ onUnmounted(() => {
           <li class="dropdown user user-menu" :class="{ 'show': activeDropdown === 'user' }">
             <a href="#" class="dropdown-toggle" @click="toggleDropdown('user', $event)">
               <img src="@/assets/img/w.jpg" class="user-image" alt="User Image">
-              <span class="hidden-xs">Alexander Pierce</span>
+              <span class="hidden-xs">{{ user.fullname }}</span>
               <i class="fa fa-angle-down arrow-icon"></i>
             </a>
             <div class="dropdown-menu">
               <div class="dropdown-arrow"></div>
               <div class="user-menu-list">
                 <div class="menu-header">
-                  <span class="welcome-text">您好，Alexander</span>
-                  <small class="role-text">超级管理员</small>
+                  <span class="welcome-text">您好，{{ user.fullname }}</span>
+                  <small class="role-text">({{ company.name }})</small>
                 </div>
                 <el-menu class="user-menu-items" :default-active="'1'">
                   <el-menu-item index="1">
@@ -164,20 +313,14 @@ onUnmounted(() => {
                       <span>个人中心</span>
                     </template>
                   </el-menu-item>
-                  <el-menu-item index="2">
-                    <template #title>
-                      <i class="fa fa-cog"></i>
-                      <span>系统设置</span>
-                    </template>
-                  </el-menu-item>
                   <el-menu-item index="3">
                     <template #title>
                       <i class="fa fa-shield"></i>
-                      <span>安全设置</span>
+                      <span>修改密码</span>
                     </template>
                   </el-menu-item>
                   <el-divider></el-divider>
-                  <el-menu-item index="4" class="logout-item">
+                  <el-menu-item index="4" class="logout-item" @click="handleLogout">
                     <template #title>
                       <i class="fa fa-power-off"></i>
                       <span>退出系统</span>
@@ -211,10 +354,10 @@ onUnmounted(() => {
   min-width: 280px;
   padding: 0;
   margin: 0;
-  border: 1px solid rgba(0,0,0,0.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 4px;
   background-color: #fff;
-  box-shadow: 0 6px 12px rgba(0,0,0,.175);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
@@ -249,7 +392,7 @@ onUnmounted(() => {
 .user-header > img {
   width: 90px;
   height: 90px;
-  border: 3px solid rgba(255,255,255,0.2);
+  border: 3px solid rgba(255, 255, 255, 0.2);
 }
 
 .user-header > p {
@@ -301,7 +444,7 @@ onUnmounted(() => {
     overflow: visible;
     margin-top: 10px;
     position: relative;
-    
+
     .dropdown-arrow {
       position: absolute;
       top: -5px;
@@ -315,19 +458,19 @@ onUnmounted(() => {
       z-index: 10;
       box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.06);
     }
-    
+
     .menu-header {
       padding: 8px 10px;
       background: linear-gradient(135deg, #f8f9fa, #f2f3f5);
       border-bottom: 1px solid #ebeef5;
       position: relative;
       z-index: 11;
-      
+
       .welcome-text {
         font-size: 12px;
         margin-bottom: 2px;
       }
-      
+
       .role-text {
         font-size: 10px;
       }
@@ -338,28 +481,28 @@ onUnmounted(() => {
 :deep(.user-menu-items) {
   border: none;
   background: transparent;
-  
+
   .el-menu-item {
     height: 32px;
     line-height: 32px;
     padding: 0 10px;
     margin: 2px 3px;
     border-radius: 4px;
-    
+
     i {
       margin-right: 5px;
       font-size: 13px;
     }
-    
+
     span {
       font-size: 12px;
     }
   }
-  
+
   .el-divider {
     margin: 3px 0;
   }
-  
+
   .logout-item {
     margin-bottom: 3px;
   }
@@ -372,7 +515,7 @@ onUnmounted(() => {
 
 .dropdown-menu {
   display: none;
-  
+
   &.show {
     display: block;
   }
@@ -384,7 +527,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   height: 50px;
-  
+
   .user-image {
     width: 30px;
     height: 30px;
@@ -392,7 +535,7 @@ onUnmounted(() => {
     margin-right: 8px;
     border: 2px solid rgba(255, 255, 255, 0.6);
   }
-  
+
   .hidden-xs {
     color: #fff;
     font-size: 14px;
@@ -409,7 +552,7 @@ onUnmounted(() => {
     margin-left: 4px;
     transition: transform 0.3s ease;
   }
-  
+
   &:hover {
     background: rgba(0, 0, 0, 0.1);
   }

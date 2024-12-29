@@ -11,6 +11,36 @@ const routes = [
                 meta: { title: '首页' }
             },
             {
+                path: '/console/dashboard',
+                component: () => import('@/views/console/dashboard.vue'),
+                meta: { title: '首页' }
+            },
+            {
+                path: '/wechat/offiaccount',
+                component: () => import('@/views/wechat/offiaccount/index.vue'),
+                meta: { title: '微信公众号管理' }
+            },
+            {
+                path: '/wechat/offiaccount/:appid/dashboard',
+                component: () => import('@/views/wechat/offiaccount/dashboard.vue'),
+                meta: { title: '公众号功能' }
+            },
+            {
+                path: '/wechat/offiaccount/:appid/menu',
+                component: () => import('@/views/wechat/menu/index.vue'),
+                meta: { title: '微信菜单管理' }
+            },
+            {
+                path: '/wechat/offiaccount/:appid/draft',
+                component: () => import('@/views/wechat/offiaccount/draft/index.vue'),
+                meta: { title: '草稿箱管理' }
+            },
+            {
+                path: '/wechat/miniprogram',
+                component: () => import('@/views/wechat/miniprogram/index.vue'),
+                meta: { title: '微信小程序管理' }
+            },
+            {
                 path: '/wechat/menu',
                 component: () => import('@/views/wechat/menu/index.vue'),
                 meta: { title: '微信菜单管理' }
@@ -24,6 +54,16 @@ const routes = [
                 path: '/table/index',
                 component: () => import('@/views/table/index.vue'),
                 meta: { title: '表格管理' }
+            },
+            {
+                path: '/system/user',
+                component: () => import('@/views/system/user/index.vue'),
+                meta: { title: '用户管理' }
+            },
+            {
+                path: '/system/role',
+                component: () => import('@/views/system/role/index.vue'),
+                meta: { title: '角色管理' }
             },
             {
                 // 404 页面

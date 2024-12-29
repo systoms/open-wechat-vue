@@ -27,5 +27,7 @@ document.body.classList = 'skin-blue-light fixed sidebar-mini sidebar-mini-expan
 </template>
 
 <style scoped>
-
+.content-wrapper{
+  background: #fff;
+}
 </style>
