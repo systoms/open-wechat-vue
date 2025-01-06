@@ -1,30 +1,25 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
 import { useTabStore } from '@/store/tab'
-import { watch, ref,onMounted,onUnmounted} from 'vue'
+import { watch } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
 const tabStore = useTabStore()
 
-// 右键菜单相关
-const contextMenu = ref(null)
-const showContextMenu = ref(false)
-const contextMenuPosition = ref({ x: 0, y: 0 })
-const currentContextTab = ref(null)
-
 // 监听路由变化，添加新标签
 watch(() => route.path, (newPath) => {
-  tabStore.addTab({
+  const tab = {
     path: newPath,
-    title: route.meta.title || 'Unnamed Page',
+    title: route.meta.title || route.name || 'Unnamed Page',
     name: route.name
-  })
+  }
+  tabStore.addTab(tab)
 }, { immediate: true })
 
 // 切换标签
 const switchTab = (path) => {
-  tabStore.activateTab(path)
+  tabStore.setActiveTab(path)
   router.push(path)
 }
 
@@ -38,66 +33,6 @@ const closeTab = (path) => {
     }
   }
 }
-
-// 处理右键菜单
-const handleContextMenu = (e, tab) => {
-  e.preventDefault()
-  currentContextTab.value = tab
-  contextMenuPosition.value = {
-    x: e.clientX,
-    y: e.clientY
-  }
-  showContextMenu.value = true
-}
-
-// 关闭右键菜单
-const closeContextMenu = () => {
-  showContextMenu.value = false
-}
-
-// 右键菜单操作
-const contextMenuActions = {
-  closeTab: () => {
-    if (currentContextTab.value) {
-      closeTab(currentContextTab.value.path)
-    }
-    closeContextMenu()
-  },
-  closeOthers: () => {
-    if (currentContextTab.value) {
-      tabStore.closeOtherTabs(currentContextTab.value.path)
-      if (route.path !== currentContextTab.value.path) {
-        router.push(currentContextTab.value.path)
-      }
-    }
-    closeContextMenu()
-  },
-  closeRight: () => {
-    if (currentContextTab.value) {
-      tabStore.closeRightTabs(currentContextTab.value.path)
-      if (!tabStore.tabs.some(tab => tab.path === route.path)) {
-        router.push(currentContextTab.value.path)
-      }
-    }
-    closeContextMenu()
-  }
-}
-
-// 点击页面其他地方关闭右键菜单
-const handleClickOutside = (e) => {
-  if (contextMenu.value && !contextMenu.value.contains(e.target)) {
-    closeContextMenu()
-  }
-}
-
-// 监听全局点击事件
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 </script>
 
 <template>
@@ -107,53 +42,33 @@ onUnmounted(() => {
         <a v-for="tab in tabStore.tabs"
            :key="tab.path"
            :class="['tab', { active: tab.path === tabStore.activeTab }]"
-           @click="switchTab(tab.path)"
-           @contextmenu="handleContextMenu($event, tab)">
+           @click="switchTab(tab.path)">
           {{ tab.title }}
           <i v-if="tabStore.tabs.length > 1"
-             class="fa fa-times-circle"
+             class="fa fa-times"
              @click.stop="closeTab(tab.path)">
           </i>
         </a>
       </div>
     </nav>
-
-    <!-- 右键菜单 -->
-    <div ref="contextMenu"
-         v-show="showContextMenu"
-         class="context-menu"
-         :style="{
-           left: contextMenuPosition.x + 'px',
-           top: contextMenuPosition.y + 'px'
-         }">
-      <ul>
-        <li @click="contextMenuActions.closeTab">
-          <i class="fa fa-times"></i> 关闭标签
-        </li>
-        <li @click="contextMenuActions.closeOthers">
-          <i class="fa fa-times-circle"></i> 关闭其他标签
-        </li>
-        <li @click="contextMenuActions.closeRight">
-          <i class="fa fa-times-circle-o"></i> 关闭右侧标签
-        </li>
-      </ul>
-    </div>
   </div>
 </template>
 
 <style scoped>
 .content-tabs {
   position: relative;
-  height: 42px;
-  background: #fafafa;
+  height: 40px;
+  background: #fff;
   line-height: 40px;
-  border-bottom: 2px solid #e7eaec;
+  border-bottom: 1px solid #e6e6e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .page-tabs {
   height: 40px;
   overflow: hidden;
   position: relative;
+  padding: 0 10px;
 }
 
 .page-tabs-content {
@@ -163,69 +78,92 @@ onUnmounted(() => {
 .tab {
   position: relative;
   background: #fafafa;
-  margin-right: 1px;
-  padding: 0 15px;
+  margin-right: 4px;
+  padding: 0 26px 0 15px;
   display: inline-block;
   cursor: pointer;
-  height: 40px;
-  line-height: 40px;
-  border-top: 2px solid transparent;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid #e6e6e6;
+  border-radius: 3px;
+  color: #666;
+  font-size: 13px;
+  margin-top: 4px;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab:hover {
+  background: #f4f4f4;
+  color: #333;
 }
 
 .tab.active {
   background: #fff;
   color: #23508e;
-  border-bottom: 2px solid #23508e;
+  border-color: #23508e;
   z-index: 1;
 }
 
 .tab i {
-  margin-left: 5px;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 12px;
+  color: #999;
+  transition: all 0.2s ease;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  border-radius: 50%;
 }
 
 .tab i:hover {
-  color: #c00;
+  color: #fff;
+  background-color: #ff4d4f;
 }
 
-/* 修改右键菜单样式 */
-.context-menu {
-  position: fixed;
-  background: #fff;
-  border: 1px solid #e7eaec;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  z-index: 1000;
-  font-size: 13px;
+/* 添加动画效果 */
+.tab {
+  animation: tabFadeIn 0.2s ease-out;
 }
 
-.context-menu ul {
-  list-style: none;
-  padding: 2px 0;
-  margin: 0;
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.context-menu li {
-  padding: 5px 15px;
-  cursor: pointer;
-  white-space: nowrap;
-  line-height: 20px;
+/* 优化滚动条 */
+.page-tabs {
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
-.context-menu li:hover {
-  background: #f5f5f5;
+.page-tabs::-webkit-scrollbar {
+  height: 2px;
 }
 
-.context-menu i {
-  margin-right: 5px;
-  width: 14px;
-  text-align: center;
+.page-tabs::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* 标签hover效果 */
-.tab:hover {
-  background: #f5f5f5;
+.page-tabs::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 1px;
+}
+
+.page-tabs:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
 }
 </style> 

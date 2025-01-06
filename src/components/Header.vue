@@ -1,152 +1,55 @@
 <script setup>
-import {ref, onMounted, onUnmounted, computed} from 'vue';
-import {useMenuStore} from '@/store/system'
-import {getInfo} from '@/api/permission/user'
-import {useRouter} from 'vue-router'
-import {useTabStore} from '@/store/tab'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTabStore } from '@/store/tab'
+import { useMenuStore } from '@/store/system'
 import { ElMessageBox } from 'element-plus'
 import { logout } from '@/api/auth'
 import { removeToken } from '@/utils/auth'
+import { useLayoutStore } from '@/store/layout'
 
-const menuStore = useMenuStore()
-const activeTopMenu = computed(() => menuStore.currentTopMenu?.id)
+const props = defineProps({
+  userInfo: {
+    type: Object,
+    required: true,
+    default: () => ({
+      company: { name: '' },
+      user: { fullname: '' }
+    })
+  }
+})
+
 const router = useRouter()
 const tabStore = useTabStore()
-const company = ref({name: ''})
-const user = ref({rand_id: '', fullname: ''})
-
-// 获取用户信息和菜单
-const initUserInfo = async () => {
-  try {
-    const {data} = await getInfo()
-    // 设置顶部菜单
-    menuStore.setTopMenus(data.menus)
-    company.value = data.company;
-    user.value = data.user;
-
-    // 根据当前路由找到对应的顶级菜单并设置
-    const currentPath = router.currentRoute.value.path
-    const currentTopMenu = findTopMenuByPath(currentPath, data.menus)
-    if (currentTopMenu) {
-      menuStore.setCurrentTopMenu(currentTopMenu)
-
-      // 查找当前路由对应的具体菜单项
-      const findCurrentMenu = (menus) => {
-        for (const menu of menus) {
-          if (menu.redirect === currentPath) return menu
-          if (menu.children?.length) {
-            const found = menu.children.find(child => {
-              if (child.redirect === currentPath) return true
-              if (child.children?.length) {
-                return child.children.some(grandChild => grandChild.redirect === currentPath)
-              }
-              return false
-            })
-            if (found) return found
-          }
-        }
-        return null
-      }
-
-      // 添加初始 tab
-      const currentMenu = findCurrentMenu(data.menus)
-      if (currentMenu) {
-        tabStore.addTab({
-          path: currentMenu.redirect,
-          title: currentMenu.label,
-          name: currentMenu.label
-        })
-      }
-    }
-  } catch (error) {
-    console.error('获取用户信息失败:', error)
-  }
-}
-
-// 根据路由路径查找对应的顶级菜单
-const findTopMenuByPath = (path, menus) => {
-  if (!menus?.length) return null
-
-  for (const menu of menus) {
-    if (menu.redirect === path) return menu
-    if (menu.children?.length) {
-      const hasPath = menu.children.some(child => {
-        if (child.redirect === path) return true
-        if (child.children?.length) {
-          return child.children.some(grandChild => grandChild.redirect === path)
-        }
-        return false
-      })
-      if (hasPath) return menu
-    }
-  }
-  return null
-}
-
-function sidebarToggle() {
-  // 获取 body 元素
-  const body = document.body;
-
-// 判断是否包含 'sidebar-collapse' 类
-  if (body.classList.contains('sidebar-collapse')) {
-    // 如果包含，则删除该类
-    body.classList.remove('sidebar-collapse');
-  } else {
-    // 如果没有包含，则添加该类
-    body.classList.add('sidebar-collapse');
-  }
-}
+const menuStore = useMenuStore()
+const layoutStore = useLayoutStore()
 
 // 管理下拉菜单状态
-const activeDropdown = ref(null);
+const activeDropdown = ref(null)
 
 // 切换下拉菜单
 const toggleDropdown = (menu, event) => {
-  event.preventDefault();
-  activeDropdown.value = activeDropdown.value === menu ? null : menu;
-};
+  event.preventDefault()
+  activeDropdown.value = activeDropdown.value === menu ? null : menu
+}
 
 // 点击外部关闭菜单
 const handleClickOutside = (event) => {
   if (!event.target.closest('.dropdown')) {
-    activeDropdown.value = null;
-  }
-};
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
-
-// 切换顶部菜单
-const handleTopMenuClick = (menu) => {
-  menuStore.setCurrentTopMenu(menu)
-  // 如果有默认重定向路由，则跳转并添加 tab
-  if (menu.redirect) {
-    const tab = {
-      path: menu.redirect,
-      title: menu.label,
-      name: menu.label
-    }
-    tabStore.addTab(tab)
-    tabStore.setActiveTab(tab.name) // 设置当前激活的标签
-    router.push(menu.redirect)
-  } else if (menu.children?.[0]?.redirect) {
-    // 如果没有重定向但有子菜单，跳转到第一个子菜单
-    const firstChild = menu.children[0]
-    const tab = {
-      path: firstChild.redirect,
-      title: firstChild.label,
-      name: firstChild.label
-    }
-    tabStore.addTab(tab)
-    tabStore.setActiveTab(tab.name) // 设置当前激活的标签
-    router.push(firstChild.redirect)
+    activeDropdown.value = null
+    document.body.classList.remove('sidebar-collapse')
+  }else{
+    document.body.classList.add('sidebar-collapse')
   }
 }
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 // 处理退出登录
 const handleLogout = () => {
@@ -157,13 +60,9 @@ const handleLogout = () => {
   }).then(async () => {
     try {
       await logout()
-      // 清除 token
       removeToken()
-      // 清除 tabStore
       tabStore.clearTabs()
-      // 清除菜单状态
       menuStore.clearMenus()
-      // 跳转到登录页
       router.push('/passport/login')
     } catch (error) {
       console.error('退出失败:', error)
@@ -173,10 +72,12 @@ const handleLogout = () => {
   })
 }
 
-onMounted(() => {
-  initUserInfo()
-})
+// 处理侧边栏切换
+const handleSidebarToggle = () => {
+  layoutStore.toggleSidebar()
+}
 </script>
+
 <template>
   <header class="main-header">
     <!-- Logo -->
@@ -189,7 +90,7 @@ onMounted(() => {
     <!-- Header Navbar: style can be found in header.less -->
     <nav class="navbar navbar-static-top">
       <!-- Sidebar toggle button-->
-      <a class="sidebar-toggle" @click.prevent="sidebarToggle">
+      <a class="sidebar-toggle" @click.prevent="handleSidebarToggle">
         <span class="sr-only">Toggle navigation</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -296,15 +197,15 @@ onMounted(() => {
           <li class="dropdown user user-menu" :class="{ 'show': activeDropdown === 'user' }">
             <a href="#" class="dropdown-toggle" @click="toggleDropdown('user', $event)">
               <img src="@/assets/img/w.jpg" class="user-image" alt="User Image">
-              <span class="hidden-xs">{{ user.fullname }}</span>
+              <span class="hidden-xs">{{ userInfo.user.fullname }}</span>
               <i class="fa fa-angle-down arrow-icon"></i>
             </a>
             <div class="dropdown-menu">
               <div class="dropdown-arrow"></div>
               <div class="user-menu-list">
                 <div class="menu-header">
-                  <span class="welcome-text">您好，{{ user.fullname }}</span>
-                  <small class="role-text">({{ company.name }})</small>
+                  <span class="welcome-text">您好，{{ userInfo.user.fullname }}</span>
+                  <small class="role-text">({{ userInfo.company.name }})</small>
                 </div>
                 <el-menu class="user-menu-items" :default-active="'1'">
                   <el-menu-item index="1">

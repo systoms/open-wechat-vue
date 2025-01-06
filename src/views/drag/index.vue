@@ -1,1191 +1,1048 @@
 <template>
-  <div class="wx-page-editor" @click.self="handleEditorClick">
-    <!-- 修改按钮组 -->
-    <div class="action-buttons">
-      <div class="action-btn save-btn" @click="handleSave">
-        <i>💾</i> 保存
-      </div>
-      <div class="action-btn preview-btn" @click="showPreview = true">
-        <i>👁️</i> 预览
-      </div>
-      <div class="action-btn settings-btn" @click="showPageSettings = true">
-        <i>⚙️</i> 配置
-      </div>
-    </div>
-
-    <!-- 页面配置弹窗 -->
-    <div class="page-settings-modal" v-if="showPageSettings">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>页面配置</h3>
-          <span class="close-btn" @click="showPageSettings = false">×</span>
-        </div>
-        <div class="modal-body">
-          <div class="settings-item">
-            <label>页面标题</label>
-            <input type="text" v-model="pageConfig.title">
-          </div>
-          <div class="settings-item">
-            <label>背景颜色</label>
-            <input type="color" v-model="pageConfig.backgroundColor">
-          </div>
-          <div class="settings-item">
-            <label>显示底部导航栏</label>
-            <input type="checkbox" v-model="pageConfig.showTabbar">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button @click="showPageSettings = false">取消</button>
-          <button class="primary" @click="savePageSettings">确定</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 左侧组件列表 -->
-    <div class="component-list">
-      <div class="component-category" v-for="(category, index) in components" :key="index">
-        <div class="category-title">{{ category.name }}</div>
-        <div class="component-items">
-          <div class="component-item"
-               v-for="item in category.items"
-               :key="item.type"
-               @click="addComponent(item.type)"
-               draggable="true"
-               @dragstart="dragStart($event, item.type)">
-            <i :class="item.icon"></i>
-            <span>{{ item.label }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 中间画布区域 -->
-    <div class="editor-canvas"
-         @dragover.prevent
-         @drop="handleDrop"
-         @click.self="handleCanvasClick">
-      <div class="phone-wrapper">
-        <img class="phone-frame" src="@/assets/iphone-frame.png" alt="iPhone frame" />
-        <div class="phone-content"
-             @click.self="handleContentClick"
-             :style="{ backgroundColor: pageConfig.backgroundColor }"
-             :class="{ 'drag-over': isDraggingOver }"
-             @dragover.prevent="handleCanvasDragover"
-             @dragleave="handleCanvasDragleave"
-             @drop="handleDrop">
-          <TransitionGroup name="component" tag="div">
-            <template v-for="(comp, index) in pageData" :key="index">
-              <div class="component-wrapper"
-                   :class="{ 
-                     active: currentIndex === index,
-                     dragging: draggingIndex === index 
-                   }"
-                   draggable="true"
-                   @dragstart="handleDragStart($event, index)"
-                   @dragend="handleDragEnd"
-                   @dragover.prevent="handleDragOver($event, index)"
-                   @dragleave="handleDragLeave"
-                   @drop.stop="handleDrop($event, index)"
-                   @click.stop="selectComponent(index)">
-                <component :is="getPreviewComponent(comp.type)"
-                          :config="comp.config"
-                          class="preview-component">
-                </component>
-                
-                <div class="component-actions" v-show="currentIndex === index">
-                  <i class="icon-up" @click.stop="moveComponent(index, -1)" title="上移">↑</i>
-                  <i class="icon-down" @click.stop="moveComponent(index, 1)" title="下移">↓</i>
-                  <i class="icon-delete" @click.stop="deleteComponent(index)" title="删除">×</i>
-                </div>
-                
-                <div class="drag-indicator" 
-                     v-if="dragoverIndex === index && (draggingNewComponent || draggingIndex !== null)">
+  <div class="page-container">
+    <div class="page-content">
+      <!-- 左侧组件面板 -->
+      <div class="components-panel">
+        <div class="panel-header">
+          <el-collapse v-model="activeCollapse">
+            <el-collapse-item title="基础组件" name="basic">
+              <div class="components-grid">
+                <div class="component-item" 
+                     v-for="item in basicComponents" 
+                     :key="item.type"
+                     draggable="true"
+                     @dragstart="handleDragStart($event, item)">
+                  <div class="item-icon">
+                    <el-icon><component :is="item.icon" /></el-icon>
+                  </div>
+                  <div class="item-label">{{ item.label }}</div>
                 </div>
               </div>
-            </template>
-          </TransitionGroup>
-        </div>
-        <!-- 添加固定的底部 tabbar -->
-        <div class="phone-tabbar" 
-             v-if="tabbarConfig.show"
-             :class="{ active: currentIndex === 'tabbar' }"
-             @click.stop="selectComponent('tabbar')">
-          <div class="tabbar-items">
-            <div v-for="(item, index) in tabbarConfig.items" 
-                 :key="index" 
-                 class="tabbar-item">
-              <i class="tabbar-icon">{{ item.icon }}</i>
-              <span class="tabbar-text">{{ item.text }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 右侧属性配置面板 -->
-    <div class="props-panel">
-      <template v-if="currentComponent">
-        <div class="panel-header">
-          {{ currentComponent.type }} 配置
-        </div>
-        <div class="panel-content">
-          <component :is="currentComponent.type + 'Config'"
-                    :value="currentComponent.config"
-                    @update="updateComponentConfig">
-          </component>
-        </div>
-      </template>
-      <template v-else-if="currentIndex === 'tabbar'">
-        <div class="panel-header">
-          底部导航配置
-        </div>
-        <div class="panel-content">
-          <TabbarConfig
-            :value="tabbarConfig"
-            @update="updateTabbarConfig">
-          </TabbarConfig>
-        </div>
-      </template>
-      <template v-else>
-        <div class="panel-empty-state">
-          <i class="empty-icon">📝</i>
-          <p>请选择或添加组件进行配置</p>
-        </div>
-      </template>
-    </div>
-
-    <!-- 简化预览模态框 -->
-    <div class="preview-modal" v-if="showPreview" @click.self="showPreview = false">
-      <div class="phone-wrapper">
-        <img class="phone-frame" src="@/assets/iphone-frame.png" alt="iPhone frame" />
-        <div class="phone-content"
-             :style="{ backgroundColor: pageConfig.backgroundColor }">
-          <component v-for="(comp, index) in pageData"
-                    :key="index"
-                    :is="getPreviewComponent(comp.type)"
-                    :config="comp.config"
-                    class="preview-component">
-          </component>
-        </div>
-        <div class="phone-tabbar" v-if="tabbarConfig.show">
-          <div class="tabbar-items">
-            <div v-for="(item, index) in tabbarConfig.items" 
-                 :key="index" 
-                 class="tabbar-item">
-              <i class="tabbar-icon">{{ item.icon }}</i>
-              <span class="tabbar-text">{{ item.text }}</span>
-            </div>
-          </div>
+            </el-collapse-item>
+            <el-collapse-item title="业务组件" name="business">
+              <div class="components-grid">
+                <div class="component-item"
+                     v-for="item in businessComponents"
+                     :key="item.type"
+                     draggable="true"
+                     @dragstart="handleDragStart($event, item)">
+                  <div class="item-icon">
+                    <el-icon><component :is="item.icon" /></el-icon>
+                  </div>
+                  <div class="item-label">{{ item.label }}</div>
+                </div>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
         </div>
       </div>
-      <!-- 添加新的关闭按钮 -->
-      <div class="preview-close-button" @click="showPreview = false">
-        <i>✕</i>
-        <span>关闭预览</span>
+
+      <!-- 中间预览区域 -->
+      <section class="preview-panel">
+        <section class="preview-wrapper">
+          <img src="@/assets/phone.png" class="status-bar" alt="phone status" />
+          <div class="preview-header">
+            <div class="header-back">
+              <el-icon><ArrowLeft /></el-icon>
+            </div>
+            <div class="header-title">
+              <span>{{ pageTitle || '页面标题' }}</span>
+            </div>
+          </div>
+          <!-- 内层容器用于滚动 -->
+          <section class="preview-container" 
+                @dragover="handlePreviewDragOver"
+                @drop.prevent="handleDrop"
+                @dragend.prevent="handleDragEnd"
+                ref="canvasRef">
+            <section class="canvas-content">
+              <template v-for="(item, index) in canvasItems" :key="item.id">
+                <!-- 在每个组件前显示放置区域 -->
+                <div v-if="showDropArea && dropAreaIndex === index"
+                      class="placementarea">
+                  <div class="drop-text">组件放置区域</div>
+                  <div class="drop-desc">松开鼠标，完成组件插入</div>
+                </div>
+                
+                <div class="canvas-item"
+                      :class="{ active: currentItem?.id === item.id }"
+                      :style="getItemStyle(item)"
+                      @click="selectItem(item)">
+                  <component :is="item.component" v-bind="item.props" />
+                  <div class="component-tag">
+                    <span>{{ getComponentLabel(item.type) }}</span>
+                    <el-icon class="delete-icon" @click.stop="removeItem(index)">
+                      <Delete />
+                    </el-icon>
+                    <div class="tag-arrow"></div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- 在末尾显示放置区域 -->
+              <div v-if="showDropArea && dropAreaIndex === canvasItems.length"
+                    class="placementarea">
+                <div class="drop-text">组件放置区域</div>
+                <div class="drop-desc">松开鼠标，完成组件插入</div>
+              </div>
+            </section>
+          </section>
+        </section>
+      </section>
+
+      <!-- 操作按钮 - 浮动样式 -->
+      <div class="action-panel">
+        <el-button type="primary" class="action-btn" @click="handlePageConfig">
+          <el-icon><Setting /></el-icon>
+          <span>页面设置</span>
+        </el-button>
+        <el-button type="primary" class="action-btn" @click="handleComponentManage">
+          <el-icon><Grid /></el-icon>
+          <span>组件管理</span>
+        </el-button>
+        <el-button type="primary" class="action-btn">
+          <el-icon><View /></el-icon>
+          <span>&nbsp;预&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;览&nbsp;</span>
+        </el-button>
+        <el-button type="primary" class="action-btn">
+          <el-icon><Check /></el-icon>
+          <span>&nbsp;保&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;存&nbsp;</span>
+        </el-button>
+      </div>
+
+      <!-- 右侧配置面板 -->
+      <div class="config-panel">
+        <div class="panel-header">{{ getPanelTitle }}</div>
+        <div class="panel-content">
+          <!-- 页面配置内容 -->
+          <template v-if="isPageConfig">
+            <el-form label-position="top">
+              <el-form-item label="页面标题">
+                <el-input v-model="pageTitle" placeholder="请输入页面标题" />
+              </el-form-item>
+              <el-form-item label="页面描述">
+                <el-input v-model="pageDesc" type="textarea" rows="3" placeholder="请输入页面描述" />
+              </el-form-item>
+              <!-- 可以根据需要添加更多页面配置项 -->
+            </el-form>
+          </template>
+          <!-- 组件管理内容 -->
+          <template v-else-if="isComponentManage">
+            <div class="component-list">
+              <div class="tip-text">底部导航组件为固定页面底部，无需拖拽调整位置</div>
+              <div v-for="(item, index) in canvasItems" 
+                   :key="item.id"
+                   class="component-list-item"
+                   draggable="true"
+                   @dragstart="handleListDragStart($event, index)"
+                   @dragenter="handleListDragEnter($event, index)"
+                   @dragover.prevent
+                   @dragleave="handleListDragLeave($event)"
+                   @drop="handleListDrop($event, index)"
+                   @dragend="handleListDragEnd">
+                <div class="item-content">
+                  <el-icon><Grid /></el-icon>
+                  <span class="component-name">{{ getComponentLabel(item.type) }}</span>
+                </div>
+                <el-button 
+                  type="danger" 
+                  link
+                  @click="removeItem(index)"
+                  class="delete-btn">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </div>
+              <el-empty v-if="canvasItems.length === 0" description="暂无组件" />
+            </div>
+          </template>
+          <!-- 组件配置内容 -->
+          <template v-else-if="currentItem">
+            <el-form label-position="top">
+              <!-- 根据组件类型显示不同的配置项 -->
+              <template v-if="currentItem.type === 'text'">
+                <el-form-item label="文本内容">
+                  <el-input v-model="currentItem.props.innerHTML" type="textarea" rows="3" />
+                </el-form-item>
+              </template>
+              <template v-else-if="currentItem.type === 'image'">
+                <el-form-item label="图片地址">
+                  <el-input v-model="currentItem.props.src" />
+                </el-form-item>
+                <el-form-item label="图片描述">
+                  <el-input v-model="currentItem.props.alt" />
+                </el-form-item>
+              </template>
+              <template v-else-if="currentItem.type === 'list'">
+                <el-form-item label="列表内容">
+                  <el-input v-model="currentItem.props.innerHTML" type="textarea" rows="5" />
+                </el-form-item>
+              </template>
+            </el-form>
+          </template>
+          <el-empty v-else description="请选择组件" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import TextPreview from '@/components/previews/TextPreview.vue'
-import ImagePreview from '@/components/previews/ImagePreview.vue'
-import ButtonPreview from '@/components/previews/ButtonPreview.vue'
-import SwiperPreview from '@/components/previews/SwiperPreview.vue'
-import GridPreview from '@/components/previews/GridPreview.vue'
-import ListPreview from '@/components/previews/ListPreview.vue'
-import TextConfig from '@/components/configs/TextConfig.vue'
-import ImageConfig from '@/components/configs/ImageConfig.vue'
-import ButtonConfig from '@/components/configs/ButtonConfig.vue'
-import SwiperConfig from '@/components/configs/SwiperConfig.vue'
-import GridConfig from '@/components/configs/GridConfig.vue'
-import ListConfig from '@/components/configs/ListConfig.vue'
-import TabbarConfig from '@/components/configs/TabbarConfig.vue'
+<script setup>
+import { ref, computed, watch } from 'vue'
+import {
+  ArrowLeft,
+  Document,
+  Picture,
+  List,
+  Edit,
+  Location,
+  VideoCamera,
+  Grid,
+  View,
+  Check,
+  Setting,
+  Iphone,
+  Delete,
+  Plus
+} from '@element-plus/icons-vue'
 
-export default {
-  name: 'WxPageEditor',
-  components: {
-    TextPreview,
-    ImagePreview,
-    ButtonPreview,
-    SwiperPreview,
-    GridPreview,
-    ListPreview,
-    TextConfig,
-    ImageConfig,
-    ButtonConfig,
-    SwiperConfig,
-    GridConfig,
-    ListConfig,
-    TabbarConfig
-  },
-  data() {
-    return {
-      components: [
-        {
-          name: '基础组件',
-          items: [
-            { type: 'text', label: '文本', icon: 'icon-text' },
-            { type: 'image', label: '图片', icon: 'icon-image' },
-            { type: 'button', label: '按钮', icon: 'icon-button' }
-          ]
-        },
-        {
-          name: '容器组件',
-          items: [
-            { type: 'swiper', label: '轮播图', icon: 'icon-swiper' },
-            { type: 'grid', label: '宫格', icon: 'icon-grid' },
-            { type: 'list', label: '列表', icon: 'icon-list' }
-          ]
-        }
-      ],
-      pageData: [], // 页面组件数据
-      currentIndex: null,
-      showPageSettings: false,
-      pageConfig: {
-        title: '新建页面',
-        backgroundColor: '#ffffff',
-        showTabbar: true
-      },
-      // 修改组件默认配置
-      defaultConfigs: {
-        text: {
-          content: '点击编辑文本',
-          fontSize: 14,
-          color: '#333333',
-          align: 'left',
-          padding: 10,
-          bold: false
-        },
-        image: {
-          src: 'https://placeholder.com/300x200',
-          mode: 'aspectFill',
-          width: '100%',
-          height: '200px',
-          align: 'center',
-          padding: 10
-        },
-        button: {
-          text: '按钮',
-          type: 'default',
-          fontSize: 14,
-          width: 'auto',
-          align: 'center',
-          padding: 10
-        },
-        swiper: {
-          items: [],
-          height: 200,
-          padding: 10,
-          showDots: true
-        },
-        grid: {
-          items: [],
-          columns: 4,
-          gap: 10,
-          padding: 10
-        },
-        list: {
-          items: [],
-          showArrow: true,
-          padding: 10
-        }
-      },
-      draggingIndex: null, // 当前拖拽的组件索引
-      dragoverIndex: null, // 拖拽悬停的位置索引
-      isDraggingOver: false, // 添加拖拽悬停状态
-      draggingNewComponent: false, // 新增：标记是否在拖入新组件
-      tabbarConfig: {
-        show: true,
-        items: [
-          { icon: '🏠', text: '首页', url: '/pages/home/index' },
-          { icon: '📝', text: '分类', url: '/pages/category/index' },
-          { icon: '🛒', text: '购物车', url: '/pages/cart/index' },
-          { icon: '👤', text: '我的', url: '/pages/user/index' }
-        ]
-      },
-      showPreview: false
+const activeCollapse = ref(['basic'])
+const pageTitle = ref('')
+const pageDesc = ref('')
+const showInProfile = ref(true)
+const showBackButton = ref(true)
+const pageHeight = ref(35)
+const bgColorType = ref('default')
+const bgColor = ref('')
+
+// 画布中的组件列表
+const canvasItems = ref([])
+// 当前选中的组件
+const currentItem = ref(null)
+// 画布引用
+const canvasRef = ref(null)
+
+// 记录拖拽的起始位置
+let dragStartIndex = -1
+let currentDragElement = null
+
+// 记录当前悬停的目标索引
+let currentHoverIndex = -1
+
+// 添加响应式变量
+const showDropArea = ref(false)
+const dropAreaIndex = ref(-1)
+const isDragging = ref(false)
+
+// 基础组件
+const basicComponents = [
+  {
+    type: 'text',
+    label: '文本',
+    icon: Document,
+    component: 'div',
+    defaultProps: { 
+      innerHTML: '文本内容',
+      style: {
+        padding: '10px'
+      }
     }
   },
-  computed: {
-    currentComponent() {
-      return this.currentIndex !== null && typeof this.currentIndex === 'number' 
-        ? this.pageData[this.currentIndex] 
-        : null
+  {
+    type: 'image',
+    label: '图片',
+    icon: Picture,
+    component: 'img',
+    defaultProps: { 
+      src: 'https://placeholder.com/150',
+      alt: '图片',
+      style: {
+        width: '150px',
+        height: '150px'
+      }
     }
   },
-  methods: {
-    addComponent(type) {
-      const component = this.createComponent(type)
-      this.pageData.push(component)
-      this.currentIndex = this.pageData.length - 1
-    },
-
-    createComponent(type) {
-      return {
-        type,
-        config: { ...this.defaultConfigs[type] }
+  {
+    type: 'list',
+    label: '列表',
+    icon: List,
+    component: 'div',
+    defaultProps: { 
+      innerHTML: `
+        <div style="padding: 10px">
+          <div style="margin-bottom: 8px">列表项1</div>
+          <div style="margin-bottom: 8px">列表项2</div>
+          <div>列表项3</div>
+        </div>
+      `,
+      style: {
+        padding: '10px'
       }
-    },
-
-    selectComponent(index) {
-      // 阻止事件冒泡
-      event?.stopPropagation();
-      console.log('选中组件:', index);
-      this.currentIndex = index;
-    },
-
-    updateComponentConfig(config) {
-      if (this.currentIndex !== null) {
-        this.pageData[this.currentIndex].config = {
-          ...this.pageData[this.currentIndex].config,
-          ...config
-        }
-      }
-    },
-
-    moveComponent(index, direction) {
-      const newIndex = index + direction
-      // 检查是否超出边界
-      if (newIndex < 0 || newIndex >= this.pageData.length) return
-      
-      // 创建组交换位置
-      const newPageData = [...this.pageData]
-      const temp = newPageData[index]
-      newPageData[index] = newPageData[newIndex]
-      newPageData[newIndex] = temp
-      
-      // 更新整个数组
-      this.pageData = newPageData
-      
-      // 更新当前选中的组件索引
-      this.currentIndex = newIndex
-    },
-
-    deleteComponent(index) {
-      this.pageData.splice(index, 1)
-      this.currentIndex = null
-    },
-
-    dragStart(event, type) {
-      event.stopPropagation()
-      event.dataTransfer.setData('componentType', type)
-      this.draggingNewComponent = true
-      this.draggingIndex = null
-    },
-
-    handleDrop(event, index) {
-      event.preventDefault()
-      event.stopPropagation()
-      
-      // 获取拖拽的组件类型
-      const componentType = event.dataTransfer.getData('componentType')
-      
-      // 如果是从组表拖入新组件
-      if (componentType && this.draggingNewComponent) {
-        const component = this.createComponent(componentType)
-        this.pageData.splice(typeof index === 'number' ? index : this.pageData.length, 0, component)
-        this.currentIndex = typeof index === 'number' ? index : this.pageData.length - 1
-      }
-      
-      // 重置所有状态
-      this.dragoverIndex = null
-      this.draggingNewComponent = false
-      this.draggingIndex = null
-      this.isDraggingOver = false
-    },
-
-    savePageSettings() {
-      // 应用页面配置
-      this.applyPageSettings()
-      this.showPageSettings = false
-    },
-
-    applyPageSettings() {
-      // 应用页面样式
-      const phoneContent = document.querySelector('.phone-content')
-      if (phoneContent) {
-        phoneContent.style.backgroundColor = this.pageConfig.backgroundColor
-      }
-    },
-
-    // 导出页面配置和组件数据
-    exportPage() {
-      return {
-        config: this.pageConfig,
-        components: this.pageData
-      }
-    },
-
-    // 获取预览组件名称
-    getPreviewComponent(type) {
-      const componentMap = {
-        text: 'TextPreview',
-        image: 'ImagePreview',
-        button: 'ButtonPreview',
-        swiper: 'SwiperPreview',
-        grid: 'GridPreview',
-        list: 'ListPreview'
-      }
-      return componentMap[type]
-    },
-
-    handleDragStart(event, index) {
-      event.stopPropagation()
-      this.draggingIndex = index
-      event.dataTransfer.effectAllowed = 'move'
-    },
-    
-    handleDragEnd(event) {
-      event.preventDefault()
-      event.stopPropagation()
-      this.draggingIndex = null
-      this.dragoverIndex = null
-    },
-
-    // 添加拖动过程中的处理
-    handleDragOver(event, index) {
-      event.preventDefault()
-      // 允许新组件和已有组件的拖动都显示位置指示器
-      if (this.draggingNewComponent || this.draggingIndex !== null) {
-        this.dragoverIndex = index
-      }
-    },
-
-    handleDragLeave(event) {
-      event.preventDefault()
-      // 只在真正离开容器时重置
-      if (!event.relatedTarget?.closest('.component-wrapper')) {
-        this.dragoverIndex = null
-      }
-    },
-
-    // 简化导出配置方法
-    exportConfig() {
-      const config = {
-        pageConfig: this.pageConfig,
-        components: this.pageData,
-        tabbarConfig: this.tabbarConfig
-      }
-      
-      console.log('页面配置：', config)
-      return config // 返回配置对象，方便外部调用时获取
-    },
-    
-    // 触发组件选择
-    triggerImport() {
-      this.$refs.fileInput.click()
-    },
-    
-    // 处理导入
-    handleImport(event) {
-      const file = event.target.files[0]
-      if (!file) return
-      
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        try {
-          const config = JSON.parse(e.target.result)
-          this.importConfig(config)
-        } catch (error) {
-          alert('配置文件格式错误')
-        }
-      }
-      reader.readAsText(file)
-      
-      // 清理文件输入，允许重复导入相同文件
-      event.target.value = ''
-    },
-    
-    // 导入配置
-    importConfig(config) {
-      if (!config.pageConfig || !config.components) {
-        alert('配置文件格式错误')
-        return
-      }
-      
-      // 更新页面配置
-      this.pageConfig = {
-        ...this.pageConfig, // 保留默认值
-        ...config.pageConfig
-      }
-      
-      // 更新组件数据
-      this.pageData = config.components.map(comp => ({
-        type: comp.type,
-        config: {
-          ...this.defaultConfigs[comp.type], // 保留默认值
-          ...comp.config
-        }
-      }))
-      
-      // 更新 tabbar 配置
-      if (config.tabbarConfig) {
-        this.tabbarConfig = config.tabbarConfig
-      }
-      
-      // 重置选中状态
-      this.currentIndex = null
-    },
-    
-    handleCanvasDragover(event) {
-      event.preventDefault()
-    },
-    
-    handleCanvasDragleave(event) {
-      event.preventDefault()
-      this.dragoverIndex = null
-      this.isDraggingOver = false
-    },
-
-    updateTabbarConfig(config) {
-      console.log('更新 tabbar 配置:', config)
-      this.tabbarConfig = config
-    },
-
-    handleSave() {
-      const config = this.exportConfig()
-      // 这里可以根据需要处��保存逻辑
-      console.log('保存配置：', config)
-      // 可以触发组件的保存事件
-      this.$emit('save', config)
-    },
-
-    // 添加点击处理方法
-    handleEditorClick() {
-      this.currentIndex = null;
-    },
-    
-    handleCanvasClick() {
-      this.currentIndex = null;
-    },
-    
-    handleContentClick() {
-      this.currentIndex = null;
     }
-  },
-  watch: {
-    currentIndex: {
-      handler(newVal) {
-        console.log('currentIndex changed:', newVal, typeof newVal)
-      },
-      immediate: true
-    },
-    'pageConfig.showTabbar'(val) {
-      this.tabbarConfig.show = val
-    },
-    'tabbarConfig.show'(val) {
-      this.pageConfig.showTabbar = val
+  }
+]
+
+// 业务组件
+const businessComponents = [
+  {
+    type: 'form',
+    label: '表单',
+    icon: Edit,
+    component: 'form',
+    defaultProps: { 
+      innerHTML: '<div style="padding: 10px;">表单内容</div>'
+    }
+  }
+]
+
+// 处理预览
+const handlePreview = () => {
+  // 实现预览逻辑
+}
+
+// 处理保存
+const handleSave = () => {
+  // 实现保存逻辑
+}
+
+// 重置拖拽状态
+const resetDragState = () => {
+  isDragging.value = false
+  showDropArea.value = false
+  dropAreaIndex.value = -1
+}
+
+// 处理组件拖入
+const handleItemDragEnter = (e, index) => {
+  e.stopPropagation()
+  const item = e.currentTarget
+  const rect = item.getBoundingClientRect()
+  const mouseY = e.clientY - rect.top
+  const middleY = rect.height / 2
+  
+  showDropArea.value = true
+  dropAreaIndex.value = mouseY < middleY ? index : index + 1
+}
+
+// 处理预览区域拖入
+const handlePreviewDragEnter = (e) => {
+  e.preventDefault()
+  e.stopPropagation()
+  
+  if (e.target === e.currentTarget) {
+    showDropArea.value = true
+    if (canvasItems.value.length === 0) {
+      dropAreaIndex.value = 0
+    } else {
+      dropAreaIndex.value = canvasItems.value.length
     }
   }
 }
+
+// 处理拖拽离开
+const handlePreviewDragLeave = (e) => {
+  e.preventDefault()
+  const relatedTarget = e.relatedTarget
+  if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+    showDropArea.value = false
+    dropAreaIndex.value = -1
+  }
+}
+
+// 处理预览区域拖动
+const handlePreviewDragOver = (e) => {
+  e.preventDefault()
+  if (!isDragging.value) return
+
+  // 计算插入位置
+  const container = e.currentTarget
+  const rect = container.getBoundingClientRect()
+  const items = container.querySelectorAll('.canvas-item')
+  let newIndex = canvasItems.value.length
+
+  // 遍历所有组件，找到合适的插入位置
+  for (let i = 0; i < items.length; i++) {
+    const itemRect = items[i].getBoundingClientRect()
+    const itemMiddle = itemRect.top + itemRect.height / 2
+    if (e.clientY < itemMiddle) {
+      newIndex = i
+      break
+    }
+  }
+
+  // 更新放置区域位置
+  if (dropAreaIndex.value !== newIndex) {
+    dropAreaIndex.value = newIndex
+    showDropArea.value = true
+  }
+}
+
+// 处理拖拽开始
+const handleDragStart = (e, component) => {
+  isDragging.value = true
+  e.dataTransfer.setData('componentType', component.type)
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+// 处理拖拽放置
+const handleDrop = (e) => {
+  e.preventDefault()
+  const type = e.dataTransfer.getData('componentType')
+  const component = [...basicComponents, ...businessComponents].find(c => c.type === type)
+  
+  if (component && dropAreaIndex.value !== -1) {
+    const item = {
+      id: Date.now(),
+      type: component.type,
+      component: component.component,
+      props: { ...component.defaultProps }
+    }
+    
+    canvasItems.value.splice(dropAreaIndex.value, 0, item)
+    currentItem.value = item
+    isPageConfig.value = false
+  }
+  
+  resetDragState()
+}
+
+// 处理拖拽结束
+const handleDragEnd = () => {
+  resetDragState()
+}
+
+// 获取组件样式 - 修改为 1px 透明边框
+const getItemStyle = (item) => {
+  return {
+    backgroundColor: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
+  }
+}
+
+// 面板状态控制
+const isPageConfig = ref(true)
+const isComponentManage = ref(false)
+
+// 获取面板标题
+const getPanelTitle = computed(() => {
+  if (isPageConfig.value) return '页面设置'
+  if (isComponentManage.value) return '组件管理'
+  if (currentItem.value) {
+    const component = [...basicComponents, ...businessComponents].find(c => c.type === currentItem.value.type)
+    return component ? `${component.label}组件配置` : '组件配置'
+  }
+  return '属性配置'
+})
+
+// 处理组件管理按钮点击
+const handleComponentManage = () => {
+  isComponentManage.value = true
+  isPageConfig.value = false
+  currentItem.value = null
+}
+
+// 修改页面配置处理方法
+const handlePageConfig = () => {
+  isPageConfig.value = true
+  isComponentManage.value = false
+  currentItem.value = null
+}
+
+// 修改选择组件方法
+const selectItem = (item) => {
+  currentItem.value = item
+  isPageConfig.value = false
+  isComponentManage.value = false
+}
+
+// 移除组件
+const removeItem = (index) => {
+  // 如果要删除的是当前选中的组件，清除选中状态
+  if (currentItem.value === canvasItems.value[index]) {
+    currentItem.value = null
+  }
+  canvasItems.value.splice(index, 1)
+}
+
+// 更新组件属性
+const updateItemProps = (props) => {
+  if (currentItem.value) {
+    currentItem.value.props = props
+  }
+}
+
+// 获取组件标题
+const getComponentTitle = (type) => {
+  if (!type) return null
+  const component = [...basicComponents, ...businessComponents].find(c => c.type === type)
+  return component ? `${component.label}配置` : '属性配置'
+}
+
+// 获取组件标签名称
+const getComponentLabel = (type) => {
+  const component = [...basicComponents, ...businessComponents].find(c => c.type === type)
+  return component ? component.label : type
+}
+
+// 处理列表项拖拽开始
+const handleListDragStart = (e, index) => {
+  dragStartIndex = index
+  currentDragElement = e.target
+  e.target.classList.add('dragging')
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+// 处理列表项拖拽进入
+const handleListDragEnter = (e, index) => {
+  if (currentHoverIndex === index) return
+  
+  let targetItem = e.target
+  while (targetItem && !targetItem.classList.contains('component-list-item')) {
+    targetItem = targetItem.parentElement
+  }
+  
+  if (!targetItem || targetItem === currentDragElement) return
+  
+  const rect = targetItem.getBoundingClientRect()
+  const mouseY = e.clientY - rect.top
+  const isInUpperHalf = mouseY < rect.height / 2
+  
+  currentHoverIndex = index
+  
+  // 清除所有项的状态
+  const items = document.querySelectorAll('.component-list-item')
+  items.forEach(item => {
+    item.classList.remove('drag-over-top', 'drag-over-bottom')
+  })
+  
+  // 添加新的状态
+  if (isInUpperHalf) {
+    targetItem.classList.add('drag-over-top')
+  } else {
+    targetItem.classList.add('drag-over-bottom')
+  }
+}
+
+// 处理列表项拖拽离开
+const handleListDragLeave = (e) => {
+  let relatedTarget = e.relatedTarget
+  while (relatedTarget && !relatedTarget.classList.contains('component-list-item')) {
+    relatedTarget = relatedTarget.parentElement
+  }
+  
+  if (relatedTarget && relatedTarget.classList.contains('component-list-item')) return
+  
+  currentHoverIndex = -1
+  const items = document.querySelectorAll('.component-list-item')
+  items.forEach(item => {
+    item.classList.remove('drag-over-top', 'drag-over-bottom')
+  })
+}
+
+// 处理列表项拖拽结束
+const handleListDragEnd = () => {
+  currentHoverIndex = -1
+  const items = document.querySelectorAll('.component-list-item')
+  items.forEach(item => {
+    item.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom')
+  })
+  currentDragElement = null
+}
+
+// 处理列表项放置
+const handleListDrop = (e, dropIndex) => {
+  e.preventDefault()
+  if (dragStartIndex === dropIndex) return
+  
+  // 获取目标元素
+  let targetItem = e.target
+  while (targetItem && !targetItem.classList.contains('component-list-item')) {
+    targetItem = targetItem.parentElement
+  }
+  
+  if (!targetItem) return
+  
+  // 获取鼠标在目标元素中的相对位置
+  const rect = targetItem.getBoundingClientRect()
+  const mouseY = e.clientY - rect.top
+  const isInUpperHalf = mouseY < rect.height / 2
+  
+  // 调整插入位置
+  let finalDropIndex = dropIndex
+  if (dragStartIndex < dropIndex && !isInUpperHalf) {
+    finalDropIndex -= 1
+  } else if (dragStartIndex > dropIndex && isInUpperHalf) {
+    finalDropIndex += 1
+  }
+  
+  // 获取要移动的项
+  const item = canvasItems.value[dragStartIndex]
+  // 从数组中删除该项
+  canvasItems.value.splice(dragStartIndex, 1)
+  // 在新位置插入该项
+  canvasItems.value.splice(finalDropIndex, 0, item)
+  
+  // 重置所有状态
+  currentHoverIndex = -1
+  handleListDragEnd()
+  dragStartIndex = -1
+}
+
+const isDraggingOver = ref(false)
+const dropIndicatorStyle = ref({})
+
+// 添加 watch 来监控 currentHoverIndex 的变化
+watch(() => currentHoverIndex, (newVal) => {
+  console.log('currentHoverIndex changed to:', newVal)
+})
 </script>
 
-<style scoped>
-.wx-page-editor {
-  position: relative;
-  display: flex;
+<style lang="less" scoped>
+.page-container {
   height: 100vh;
-  background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fa;
+  overflow: visible;
+}
+
+.page-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.components-panel {
+  width: 280px;
+  background: #fff;
+  border-right: 1px solid #dcdfe6;
+  
+  :deep(.el-collapse) {
+    border: none;
+
+    .el-collapse-item__header {
+      padding: 0 16px;
+      height: 35px;
+      line-height: 35px;
+      font-size: 14px;
+      color: #303133;
+    }
+
+    .el-collapse-item__content {
+      padding-bottom: 0;
+    }
+  }
+  
+  .components-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    padding: 16px;
+  }
+  
+  .component-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    width: 60px;
+    background: transparent;
+    border-radius: 4px;
+    cursor: move;
+    transition: all 0.3s;
+    margin: 0 auto;
+    gap: 1px;
+    
+    &:hover {
+      background-color: #409eff;
+      color: #ffffff;
+      
+      .item-icon {
+        color: #ffffff;
+      }
+      
+      .item-label {
+        color: #ffffff;
+      }
+    }
+    
+    .item-icon {
+      font-size: 24px;
+      color: #606266;
+      transition: color 0.3s;
+      line-height: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .item-label {
+      font-size: 12px;
+      color: #606266;
+      transition: color 0.3s;
+      line-height: 1;
+      height: 12px;
+    }
+  }
+}
+
+.preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  padding-left: 60px;
+  position: relative;
+  overflow-y: scroll;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+    background: #f7f8fa;
+  
+  .preview-wrapper {
+    width: 375px;
+    min-height: 760px;
+    -webkit-box-shadow: 0 0 14px 0 rgba(0, 0, 0, .1);
+    box-shadow: 0 0 14px 0 rgba(0, 0, 0, .1);
+    margin: 45px 0;
+    position: relative;
+  }
+
+  .status-bar {
+    width: 100%;
+    display: block;
+    object-fit: contain;
+  }
+  
+  .preview-header {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fff;
+    position: relative;
+    
+    .header-back {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      height: 44px;
+      
+      .el-icon {
+        font-size: 14px;
+        color: #303133;
+      }
+    }
+    
+    .header-title {
+      flex: 1;
+      text-align: center;
+      
+      span {
+        font-size: 14px;
+        color: #303133;
+        font-weight: normal;
+        line-height: 1.5;
+      }
+    }
+  }
+  
+  .preview-container {
+    min-height: 603px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    cursor: pointer;
+    width: 100%;
+    position: relative;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+
+    .canvas-content {
+      min-height: 100%;
+      position: relative;
+      width: 100%;
+      overflow: visible;
+    }
+  }
+}
+
+.config-panel {
+  width: 300px;
+  background: #fff;
+  border-left: 1px solid #dcdfe6;
+  
+  .panel-header {
+    height: 48px;
+    line-height: 48px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 1px solid #dcdfe6;
+    color: #303133;
+  }
+  
+  .panel-content {
+    padding: 16px;
+  }
+}
+
+.action-panel {
+  position: absolute;
+  right: 316px;
+  top: 47px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 90px;
+
+  .action-btn {
+    width: 90px;
+    justify-content: flex-start;
+    padding: 7px 8px;
+    background: #fff;
+    color: #606266;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    
+    &:first-child {
+      margin-right: auto;
+    }
+    
+    &:not(:first-child) {
+      margin-left: auto;
+    }
+    
+    &:hover {
+      color: #409eff;
+      background: #ecf5ff;
+      border: none;
+    }
+    
+    :deep(.el-icon) {
+      font-size: 14px;
+    }
+    
+    span {
+      font-size: 13px;
+      font-weight: 400;
+    }
+  }
 }
 
 .component-list {
-  width: 250px;
-  background: #fff;
-  border-right: 1px solid #eee;
-  overflow-y: auto;
+  .tip-text {
+    font-size: 12px;
+    color: #909399;
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+
+  .component-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: #fff;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+    cursor: move;
+    position: relative;
+    
+    &.dragging {
+      opacity: 0.5;
+      background: #f5f7fa;
+      box-shadow: none;
+      border: 1px solid #e4e7ed;
+    }
+    
+    &.drag-over-top {
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -6px;
+        height: 2px;
+        background-color: #409eff;
+      }
+    }
+    
+    &.drag-over-bottom {
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -6px;
+        height: 2px;
+        background-color: #409eff;
+      }
+    }
+    
+    &:hover {
+      background: #f5f7fa;
+    }
+    
+    .item-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .el-icon {
+        font-size: 16px;
+        color: #909399;
+        display: flex;
+        align-items: center;
+        width: 16px;
+        height: 16px;
+      }
+      
+      .component-name {
+        font-size: 14px;
+        color: #303133;
+        line-height: 1;
+      }
+    }
+  }
 }
 
-.component-category {
-  padding: 10px;
-}
-
-.category-title {
-  font-size: 14px;
-  color: #666;
-  padding: 5px 0;
-}
-
-.component-items {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.component-item {
+.placementarea {
+  height: 60px;
+  border: 1px dashed #409eff;
+  background-color: rgba(64, 158, 255, 0.04);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.editor-canvas {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
   justify-content: center;
+  pointer-events: none;
+  transition: all 0.3s;
+  
+  .drop-icon {
+    color: #409eff;
+    margin-bottom: 8px;
+    
+    .el-icon {
+      font-size: 24px;
+      animation: bounce 1s infinite;
+    }
+  }
+  
+  .drop-text {
+    font-size: 14px;
+    color: #409eff;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  .drop-desc {
+    font-size: 12px;
+    color: #909399;
+    opacity: 0.8;
+  }
 }
 
-.phone-wrapper {
-  width: 375px;
-  height: 812px;
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.canvas-item {
   position: relative;
-  margin: 20px;
-  margin-top: 0;
-}
-
-.phone-frame {
-  position: absolute;
-  top: 0;
-  left: 0;
+  background: #fff;
+  border: 1px solid transparent;
   width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 10;
-  object-fit: contain;
-}
-
-.phone-content {
-  position: absolute;
-  top: 38px;
-  left: 18px;
-  width: calc(100% - 36px);
-  height: calc(100% - 76px);
-  background: #fff;
-  overflow-y: auto;
-  padding-top: 43px;
-  padding-bottom: 50px;
-  border-top-left-radius: 43px;
-  border-top-right-radius: 43px;
-  border-bottom-left-radius: 43px;
-  border-bottom-right-radius: 43px;
-}
-
-.component-wrapper {
-  position: relative;
-  margin: 4px 0;
-  border: 1px dashed #dcdfe6;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 4px;
-  padding: 2px;
-}
-
-.component-wrapper.active {
-  border: 1px dashed #409EFF;
-  background: rgba(64, 158, 255, 0.04);
-}
-
-/* 组件操作按钮样式 */
-.component-actions {
-  position: absolute;
-  top: -1px;
-  right: -1px;
-  display: flex;
-  z-index: 10;
-}
-
-.component-actions i {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  cursor: pointer;
-  font-style: normal;
-  font-size: 12px;
-  margin-left: -1px;
-  transition: all 0.2s;
-}
-
-.component-actions i:first-child {
-  border-top-left-radius: 2px;
-  border-bottom-left-radius: 2px;
-  margin-left: 0;
-}
-
-.component-actions i:last-child {
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
-}
-
-.component-actions i:hover {
-  background: #f5f7fa;
-  z-index: 1; /* 确保悬浮时边框显示在上层 */
-  position: relative;
-  border-color: #c0c4cc;
-}
-
-.icon-up, .icon-down {
-  color: #666;
-}
-
-.icon-up:hover, .icon-down:hover {
-  color: #409EFF;
-  background: #ecf5ff;
-  border-color: #b3d8ff;
-}
-
-.icon-delete {
-  color: #f56c6c;
-}
-
-.icon-delete:hover {
-  background: #fef0f0;
-  color: #f56c6c;
-  border-color: #fbc4c4;
-}
-
-/* 拖动时的组件样式 */
-.component-wrapper.dragging {
-  opacity: 0.5;
-  background: #f0f7ff;
-  border: 1px dashed #409EFF;
-}
-
-/* 拖动指示线 */
-.drag-indicator {
-  position: absolute;
-  left: -10px;
-  right: -10px;
-  height: 3px;
-  background-color: #409EFF;
-  pointer-events: none;
-  z-index: 100;
-}
-
-.drag-indicator::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #409EFF;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
-}
-
-/* 组件移动动画 */
-.component-move {
-  transition: transform 0.3s ease-out;
-}
-
-/* 移除其他可能影响效果的样式 */
-.component-wrapper:not(.dragging) {
-  transition: all 0.2s ease-out;
-}
-
-/* 移除之前的样式 */
-.phone-content.drag-over::after {
-  display: none;
-}
-
-.props-panel {
-  width: 300px;
-  background: #fff;
-  border-left: 1px solid #eee;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.panel-header {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  font-size: 14px;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.panel-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-.page-settings-btn {
-  display: none;
-}
-
-.save-btn {
-  top: 20px;
-  background: #4cd964; /* 使用绿色表示保存 */
-}
-
-.preview-btn {
-  position: absolute;
-  top: 20px;
-  right: 340px;
-  padding: 8px 16px;
-  background: #67c23a;
-  color: #fff;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 1000;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.preview-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.preview-btn i {
-  font-style: normal;
-}
-
-/* 修改预览模态框样式 */
-.preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* 预览关闭按钮 */
-.preview-close-button {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 10px 20px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 14px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.preview-close-button:hover {
-  background: rgba(0, 0, 0, 0.8);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.preview-close-button i {
-  font-style: normal;
-  font-size: 16px;
-}
-
-.preview-close-button span {
-  font-weight: 500;
-}
-
-/* 移除不需要的样式 */
-.preview-wrapper,
-.preview-header,
-.preview-content {
-  display: none;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* 美化滚动条 */
-.preview-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.preview-content::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 3px;
-}
-
-.preview-content::-webkit-scrollbar-track {
-  background: #f5f5f5;
-}
-
-/* 当视口高度小于 800px 时的样式 */
-@media screen and (max-height: 800px) {
-  .preview-wrapper {
-    height: 100%;  /* 占满可用高度 */
-  }
-  
-  .preview-content {
-    min-height: 0;  /* 移除最小高度限制 */
-  }
-}
-
-/* 修改操作按钮组样式 */
-.action-buttons {
-  position: fixed; /* 改为 fixed 位 */
-  top: 50%;
-  right: 340px;
-  transform: translateY(-50%); /* 垂直居中 */
-  display: flex;
-  flex-direction: column; /* 改为竖向排列 */
-  gap: 16px; /* 增加按钮之间的间距 */
-  z-index: 1000;
-}
-
-.action-btn {
-  width: 100px; /* 固定宽度 */
-  padding: 12px 16px;
-  color: #fff;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.action-btn:hover {
-  opacity: 0.9;
-  transform: translateX(-5px); /* 改为横向移动效果 */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.action-btn:active {
-  transform: translateX(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* 保存按钮样式 */
-.save-btn {
-  background: #409EFF;
-}
-
-/* 预览按钮样式 */
-.preview-btn {
-  background: #67c23a;
-}
-
-/* 移除之前的单独预览按钮样式 */
-.preview-btn {
-  position: static;
-}
-
-/* 修改按钮样式 */
-.action-btn.save-btn {
-  background: #409EFF;
-}
-
-.action-btn.preview-btn {
-  background: #67c23a;
-}
-
-.action-btn.settings-btn {
-  background: #909399; /* 设置按钮使用灰色调 */
-}
-
-/* 通用 tabbar 样式（编辑和预览共用） */
-.phone-tabbar {
-  position: absolute;
-  bottom: 38px;
-  left: 17px;
-  width: calc(100% - 34px);
-  height: 50px;
-  background: #fff;
-  border-top: 1px solid #eee;
-  z-index: 9;
-  border-bottom-left-radius: 30px;
-  border-bottom-right-radius: 30px;
   box-sizing: border-box;
-}
-
-/* 修改选中效果，使用 1px 边框 */
-.editor-canvas .phone-tabbar.active {
-  border-top: 1px dashed #409EFF;
-  background: rgba(64, 158, 255, 0.04);
-  /* 调整边距和宽度以适应 1px 边框 */
-  margin: 0;
-  width: calc(100% - 34px);
-}
-
-.tabbar-items {
-  display: flex;
-  height: 100%;
-  padding-bottom: env(safe-area-inset-bottom);
-  box-sizing: border-box; /* 添加盒模型设置 */
-}
-
-.tabbar-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #666;
-  padding: 0;
-  box-sizing: border-box; /* 添加盒模型设置 */
-  min-width: 0; /* 防止内容溢出 */
-}
-
-.tabbar-icon {
-  font-size: 20px;
-  margin-bottom: 2px;
-  font-style: normal;
-  line-height: 1;
-  flex-shrink: 0; /* 防止图标缩小 */
-}
-
-.tabbar-text {
-  font-size: 12px;
-  line-height: 1.2;
-  flex-shrink: 0; /* 防止文字缩小 */
-  white-space: nowrap; /* 防止文字换行 */
-}
-
-/* 编辑模式下的特殊样式 */
-.editor-canvas .phone-tabbar {
-  cursor: pointer;
-}
-
-.editor-canvas .phone-tabbar.active {
-  border-top: 1px solid #409EFF;
-}
-
-/* 预览模式下的特殊样式 */
-.preview-modal .phone-content {
-  padding-bottom: 70px;
-}
-
-.preview-modal .phone-tabbar {
-  pointer-events: none; /* 预览模式下禁用交互 */
-}
-
-/* 新的关闭按钮样式 */
-.preview-close-button {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 10px 20px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 14px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.preview-close-button:hover {
-  background: rgba(0, 0, 0, 0.8);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.preview-close-button i {
-  font-style: normal;
-  font-size: 16px;
-}
-
-.preview-close-button span {
-  font-weight: 500;
-}
-
-/* 预览模式下的手机尺寸 - 默认尺寸 */
-.preview-modal .phone-wrapper {
-  transform: scale(0.9);
-  transform-origin: center center;
-}
-
-/* 根据不同的视口高度调整缩放比例 */
-@media screen and (max-height: 900px) {
-  .preview-modal .phone-wrapper {
-    transform: scale(0.8);
-  }
-}
-
-@media screen and (max-height: 800px) {
-  .preview-modal .phone-wrapper {
-    transform: scale(0.7);
-  }
-}
-
-@media screen and (max-height: 700px) {
-  .preview-modal .phone-wrapper {
-    transform: scale(0.6);
-  }
-}
-
-/* 低于 600px 时不再缩放 */
-@media screen and (max-height: 600px) {
-  .preview-modal .phone-wrapper {
-    transform: none;
-  }
   
-  .preview-modal {
-    overflow-y: auto;
-    padding: 20px 0;
+  &.active {
+    border: 1px solid #409eff !important;
+  }
+
+  &:hover {
+    border: 1px dashed #409eff;
+  }
+
+  .component-tag {
+    position: absolute;
+    right: -80px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #fff;
+    padding: 4px 0;
+    width: 70px;
+    font-size: 12px;
+    color: #ffffff;
+    border: none;
+    border-radius: 2px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-right: 4px solid #fff;
+    }
+
+    .delete-icon {
+      display: none;
+      cursor: pointer;
+      color: #ffffff;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      border-radius: 2px;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+
+      &:hover {
+        color: #ffffff;
+      }
+    }
+
+    &:hover {
+      .delete-icon {
+        display: inline-flex;
+      }
+
+      &::before {
+        border-right-color: rgba(0, 0, 0, 0.6);
+      }
+    }
+
+    span {
+      font-size: 12px;
+      color: #555;
+      width: 70px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+      white-space: nowrap;
+    }
   }
 }
-
-/* 预览模态框样式 */
-.preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* 添加空状态样式 */
-.panel-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #909399;
-  padding: 20px;
-}
-
-.panel-empty-state .empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  font-style: normal;
-}
-
-.panel-empty-state p {
-  font-size: 14px;
-  margin: 0;
-  text-align: center;
-}
-
 </style> 
