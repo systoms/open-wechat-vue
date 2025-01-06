@@ -194,25 +194,16 @@ import {
   Picture,
   List,
   Edit,
-  Location,
-  VideoCamera,
   Grid,
   View,
   Check,
   Setting,
-  Iphone,
-  Delete,
-  Plus
+  Delete
 } from '@element-plus/icons-vue'
 
 const activeCollapse = ref(['basic'])
 const pageTitle = ref('')
 const pageDesc = ref('')
-const showInProfile = ref(true)
-const showBackButton = ref(true)
-const pageHeight = ref(35)
-const bgColorType = ref('default')
-const bgColor = ref('')
 
 // 画布中的组件列表
 const canvasItems = ref([])
@@ -587,9 +578,6 @@ const handleListDrop = (e, dropIndex) => {
   handleListDragEnd()
   dragStartIndex = -1
 }
-
-const isDraggingOver = ref(false)
-const dropIndicatorStyle = ref({})
 
 // 添加 watch 来监控 currentHoverIndex 的变化
 watch(() => currentHoverIndex, (newVal) => {
