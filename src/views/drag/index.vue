@@ -187,7 +187,20 @@
 </template>
 
 <script setup>
+  import 'vant/lib/index.css';
 import { ref, computed, watch } from 'vue'
+import { Button as VanButton,Cell as VanCell,CellGroup as VanCellGroup,Image as VanImage,Popup as VanPopup,Space as VanSpace,
+  // 表单组件
+  Calendar as VanCalendar, Cascader as VanCascader, Checkbox as VanCheckbox, CheckboxGroup as VanCheckboxGroup, DatePicker as VanDatePicker, Field as VanField, Form as VanForm, NumberKeyboard as VanNumberKeyboard, PasswordInput as VanPasswordInput, Picker as VanPicker, Radio as VanRadio, RadioGroup as VanRadioGroup, Rate as VanRate, Search as VanSearch, Slider as VanSlider, Stepper as VanStepper, Switch as VanSwitch, TimePicker as VanTimePicker, Uploader as VanUploader,
+  // 反馈组件
+  ActionSheet as VanActionSheet, Dialog as VanDialog, DropdownMenu as VanDropdownMenu, DropdownItem as VanDropdownItem, Loading as VanLoading, Notify as VanNotify, Overlay as VanOverlay, PullRefresh as VanPullRefresh, ShareSheet as VanShareSheet, SwipeCell as VanSwipeCell, Toast as VanToast,
+  // 展示组件
+  Badge as VanBadge, Circle as VanCircle, Collapse as VanCollapse, CountDown as VanCountDown, Divider as VanDivider, Empty as VanEmpty, ImagePreview as VanImagePreview, Lazyload as VanLazyload, List as VanList, NoticeBar as VanNoticeBar, Progress as VanProgress, Skeleton as VanSkeleton, Steps as VanSteps, Step as VanStep, Sticky as VanSticky, Swipe as VanSwipe, SwipeItem as VanSwipeItem, Tag as VanTag,
+  // 导航组件
+  ActionBar as VanActionBar, ActionBarIcon as VanActionBarIcon, ActionBarButton as VanActionBarButton, BackTop as VanBackTop, Grid as VanGrid, GridItem as VanGridItem, IndexBar as VanIndexBar, IndexAnchor as VanIndexAnchor, NavBar as VanNavBar, Pagination as VanPagination, Sidebar as VanSidebar, SidebarItem as VanSidebarItem, Tab as VanTab, Tabs as VanTabs, Tabbar as VanTabbar, TabbarItem as VanTabbarItem, TreeSelect as VanTreeSelect,
+  // 业务组件
+  AddressEdit as VanAddressEdit, AddressList as VanAddressList, Area as VanArea, Card as VanCard, ContactCard as VanContactCard, ContactEdit as VanContactEdit, ContactList as VanContactList, Coupon as VanCoupon, CouponCell as VanCouponCell, CouponList as VanCouponList, SubmitBar as VanSubmitBar
+} from 'vant'
 import {
   ArrowLeft,
   Document,
@@ -226,48 +239,575 @@ const isDragging = ref(false)
 
 // 基础组件
 const basicComponents = [
+  // 基础组件
   {
-    type: 'text',
-    label: '文本',
+    type: 'vant-button',
+    label: '按钮',
     icon: Document,
-    component: 'div',
+    component: VanButton,
     defaultProps: { 
-      innerHTML: '文本内容',
-      style: {
-        padding: '10px'
-      }
+      type: 'primary',
+      text: '按钮'
     }
   },
   {
-    type: 'image',
+    type: 'vant-cell',
+    label: '单元格',
+    icon: Document,
+    component: VanCell,
+    defaultProps: { 
+      title: '单元格',
+      value: '内容'
+    }
+  },
+  {
+    type: 'vant-cell-group',
+    label: '单元格组',
+    icon: Document,
+    component: VanCellGroup,
+    defaultProps: {
+      title: '分组标题',
+      inset: false
+    }
+  },
+  {
+    type: 'vant-image',
     label: '图片',
     icon: Picture,
-    component: 'img',
-    defaultProps: { 
-      src: 'https://placeholder.com/150',
-      alt: '图片',
-      style: {
-        width: '150px',
-        height: '150px'
-      }
+    component: VanImage,
+    defaultProps: {
+      width: 100,
+      height: 100,
+      src: 'https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg',
+      fit: 'cover'
     }
   },
   {
-    type: 'list',
-    label: '列表',
-    icon: List,
-    component: 'div',
-    defaultProps: { 
-      innerHTML: `
-        <div style="padding: 10px">
-          <div style="margin-bottom: 8px">列表项1</div>
-          <div style="margin-bottom: 8px">列表项2</div>
-          <div>列表项3</div>
-        </div>
-      `,
-      style: {
-        padding: '10px'
-      }
+    type: 'vant-popup',
+    label: '弹出层',
+    icon: Document,
+    component: VanPopup,
+    defaultProps: {
+      position: 'center',
+      innerHTML: '弹出层内容'
+    }
+  },
+  {
+    type: 'vant-space',
+    label: '间距',
+    icon: Document,
+    component: VanSpace,
+    defaultProps: {
+      direction: 'horizontal',
+      gap: '16px'
+    }
+  },
+
+  // 表单组件
+  {
+    type: 'vant-calendar',
+    label: '日历',
+    icon: Document,
+    component: VanCalendar,
+    defaultProps: {
+      poppable: false,
+      showConfirm: false
+    }
+  },
+  {
+    type: 'vant-cascader',
+    label: '级联选择',
+    icon: Document,
+    component: VanCascader,
+    defaultProps: {
+      options: [
+        {
+          text: '选项1',
+          value: '1',
+          children: [{ text: '子选项1', value: '11' }]
+        }
+      ]
+    }
+  },
+  {
+    type: 'vant-checkbox',
+    label: '复选框',
+    icon: Document,
+    component: VanCheckbox,
+    defaultProps: {
+      modelValue: false,
+      label: '复选框'
+    }
+  },
+  {
+    type: 'vant-checkbox-group',
+    label: '复选框组',
+    icon: Document,
+    component: VanCheckboxGroup,
+    defaultProps: {
+      modelValue: ['1'],
+      direction: 'horizontal'
+    }
+  },
+  {
+    type: 'vant-date-picker',
+    label: '日期选择',
+    icon: Document,
+    component: VanDatePicker,
+    defaultProps: {
+      title: '选择日期'
+    }
+  },
+  {
+    type: 'vant-field',
+    label: '输入框',
+    icon: Document,
+    component: VanField,
+    defaultProps: {
+      label: '文本',
+      placeholder: '请输入'
+    }
+  },
+  {
+    type: 'vant-form',
+    label: '表单',
+    icon: Document,
+    component: VanForm,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-number-keyboard',
+    label: '数字键盘',
+    icon: Document,
+    component: VanNumberKeyboard,
+    defaultProps: {
+      show: true
+    }
+  },
+  {
+    type: 'vant-password-input',
+    label: '密码输入框',
+    icon: Document,
+    component: VanPasswordInput,
+    defaultProps: {
+      value: '',
+      length: 6
+    }
+  },
+  {
+    type: 'vant-picker',
+    label: '选择器',
+    icon: Document,
+    component: VanPicker,
+    defaultProps: {
+      columns: ['选项1', '选项2', '选项3']
+    }
+  },
+  {
+    type: 'vant-radio',
+    label: '单选框',
+    icon: Document,
+    component: VanRadio,
+    defaultProps: {
+      name: '1'
+    }
+  },
+  {
+    type: 'vant-radio-group',
+    label: '单选框组',
+    icon: Document,
+    component: VanRadioGroup,
+    defaultProps: {
+      modelValue: '1',
+      direction: 'horizontal'
+    }
+  },
+  {
+    type: 'vant-rate',
+    label: '评分',
+    icon: Document,
+    component: VanRate,
+    defaultProps: {
+      modelValue: 3
+    }
+  },
+  {
+    type: 'vant-search',
+    label: '搜索',
+    icon: Document,
+    component: VanSearch,
+    defaultProps: {
+      placeholder: '请输入搜索关键词'
+    }
+  },
+  {
+    type: 'vant-slider',
+    label: '滑块',
+    icon: Document,
+    component: VanSlider,
+    defaultProps: {
+      modelValue: 50
+    }
+  },
+  {
+    type: 'vant-stepper',
+    label: '步进器',
+    icon: Document,
+    component: VanStepper,
+    defaultProps: {
+      modelValue: 1
+    }
+  },
+  {
+    type: 'vant-switch',
+    label: '开关',
+    icon: Document,
+    component: VanSwitch,
+    defaultProps: {
+      modelValue: true
+    }
+  },
+  {
+    type: 'vant-time-picker',
+    label: '时间选择',
+    icon: Document,
+    component: VanTimePicker,
+    defaultProps: {
+      title: '选择时间'
+    }
+  },
+  {
+    type: 'vant-uploader',
+    label: '文件上传',
+    icon: Document,
+    component: VanUploader,
+    defaultProps: {}
+  },
+
+  // 反馈组件
+  {
+    type: 'vant-action-sheet',
+    label: '动作面板',
+    icon: Document,
+    component: VanActionSheet,
+    defaultProps: {
+      actions: [{ name: '选项1' }, { name: '选项2' }],
+      show: false
+    }
+  },
+  {
+    type: 'vant-dropdown-menu',
+    label: '下拉菜单',
+    icon: Document,
+    component: VanDropdownMenu,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-loading',
+    label: '加载',
+    icon: Document,
+    component: VanLoading,
+    defaultProps: {
+      type: 'circular'
+    }
+  },
+  {
+    type: 'vant-overlay',
+    label: '遮罩层',
+    icon: Document,
+    component: VanOverlay,
+    defaultProps: {
+      show: false
+    }
+  },
+  {
+    type: 'vant-pull-refresh',
+    label: '下拉刷新',
+    icon: Document,
+    component: VanPullRefresh,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-share-sheet',
+    label: '分享面板',
+    icon: Document,
+    component: VanShareSheet,
+    defaultProps: {
+      options: [{ name: '微信', icon: 'wechat' }],
+      show: false
+    }
+  },
+  {
+    type: 'vant-swipe-cell',
+    label: '滑动单元格',
+    icon: Document,
+    component: VanSwipeCell,
+    defaultProps: {}
+  },
+
+  // 展示组件
+  {
+    type: 'vant-badge',
+    label: '徽标',
+    icon: Document,
+    component: VanBadge,
+    defaultProps: {
+      content: '5',
+      max: 99
+    }
+  },
+  {
+    type: 'vant-circle',
+    label: '环形进度条',
+    icon: Document,
+    component: VanCircle,
+    defaultProps: {
+      rate: 70,
+      text: '70%'
+    }
+  },
+  {
+    type: 'vant-collapse',
+    label: '折叠面板',
+    icon: Document,
+    component: VanCollapse,
+    defaultProps: {
+      modelValue: ['1']
+    }
+  },
+  {
+    type: 'vant-count-down',
+    label: '倒计时',
+    icon: Document,
+    component: VanCountDown,
+    defaultProps: {
+      time: 30 * 60 * 1000
+    }
+  },
+  {
+    type: 'vant-divider',
+    label: '分割线',
+    icon: Document,
+    component: VanDivider,
+    defaultProps: {
+      innerHTML: '文本'
+    }
+  },
+  {
+    type: 'vant-empty',
+    label: '空状态',
+    icon: Document,
+    component: VanEmpty,
+    defaultProps: {
+      description: '暂无数据'
+    }
+  },
+  {
+    type: 'vant-notice-bar',
+    label: '通知栏',
+    icon: Document,
+    component: VanNoticeBar,
+    defaultProps: {
+      text: '通知内容'
+    }
+  },
+  {
+    type: 'vant-progress',
+    label: '进度条',
+    icon: Document,
+    component: VanProgress,
+    defaultProps: {
+      percentage: 50
+    }
+  },
+  {
+    type: 'vant-skeleton',
+    label: '骨架屏',
+    icon: Document,
+    component: VanSkeleton,
+    defaultProps: {
+      title: true,
+      row: 3
+    }
+  },
+  {
+    type: 'vant-steps',
+    label: '步骤条',
+    icon: Document,
+    component: VanSteps,
+    defaultProps: {
+      active: 1
+    }
+  },
+  {
+    type: 'vant-sticky',
+    label: '粘性布局',
+    icon: Document,
+    component: VanSticky,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-swipe',
+    label: '轮播',
+    icon: Document,
+    component: VanSwipe,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-tag',
+    label: '标签',
+    icon: Document,
+    component: VanTag,
+    defaultProps: {
+      type: 'primary',
+      innerHTML: '标签'
+    }
+  },
+
+  // 导航组件
+  {
+    type: 'vant-action-bar',
+    label: '动作栏',
+    icon: Document,
+    component: VanActionBar,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-back-top',
+    label: '回到顶部',
+    icon: Document,
+    component: VanBackTop,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-grid',
+    label: '宫格',
+    icon: Document,
+    component: VanGrid,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-index-bar',
+    label: '索引栏',
+    icon: Document,
+    component: VanIndexBar,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-nav-bar',
+    label: '导航栏',
+    icon: Document,
+    component: VanNavBar,
+    defaultProps: {
+      title: '标题'
+    }
+  },
+  {
+    type: 'vant-pagination',
+    label: '分页',
+    icon: Document,
+    component: VanPagination,
+    defaultProps: {
+      total: 50
+    }
+  },
+  {
+    type: 'vant-sidebar',
+    label: '侧边导航',
+    icon: Document,
+    component: VanSidebar,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-tab',
+    label: '标签页',
+    icon: Document,
+    component: VanTab,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-tabbar',
+    label: '标签栏',
+    icon: Document,
+    component: VanTabbar,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-tree-select',
+    label: '分类选择',
+    icon: Document,
+    component: VanTreeSelect,
+    defaultProps: {
+      items: [{ text: '分类1' }]
+    }
+  },
+
+  // 业务组件
+  {
+    type: 'vant-address-edit',
+    label: '地址编辑',
+    icon: Document,
+    component: VanAddressEdit,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-address-list',
+    label: '地址列表',
+    icon: Document,
+    component: VanAddressList,
+    defaultProps: {
+      list: []
+    }
+  },
+  {
+    type: 'vant-area',
+    label: '省市区选择',
+    icon: Document,
+    component: VanArea,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-card',
+    label: '商品卡片',
+    icon: Document,
+    component: VanCard,
+    defaultProps: {
+      price: '2.00',
+      title: '商品标题'
+    }
+  },
+  {
+    type: 'vant-contact-card',
+    label: '联系人卡片',
+    icon: Document,
+    component: VanContactCard,
+    defaultProps: {
+      type: 'add'
+    }
+  },
+  {
+    type: 'vant-coupon-cell',
+    label: '优惠券单元格',
+    icon: Document,
+    component: VanCouponCell,
+    defaultProps: {}
+  },
+  {
+    type: 'vant-coupon-list',
+    label: '优惠券列表',
+    icon: Document,
+    component: VanCouponList,
+    defaultProps: {
+      coupons: []
+    }
+  },
+  {
+    type: 'vant-submit-bar',
+    label: '提交订单栏',
+    icon: Document,
+    component: VanSubmitBar,
+    defaultProps: {
+      price: 3050
     }
   }
 ]
