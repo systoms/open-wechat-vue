@@ -1,41 +1,11 @@
 <template>
   <div class="page-container">
     <div class="page-content">
-      <!-- 左侧组件面板 -->
-      <div class="components-panel">
-        <div class="panel-header">
-          <el-collapse v-model="activeCollapse">
-            <el-collapse-item title="基础组件" name="basic">
-              <div class="components-grid">
-                <div class="component-item" 
-                     v-for="item in basicComponents" 
-                     :key="item.type"
-                     draggable="true"
-                     @dragstart="handleDragStart($event, item)">
-                  <div class="item-icon">
-                    <el-icon><component :is="item.icon" /></el-icon>
-                  </div>
-                  <div class="item-label">{{ item.label }}</div>
-                </div>
-              </div>
-            </el-collapse-item>
-            <el-collapse-item title="业务组件" name="business">
-              <div class="components-grid">
-                <div class="component-item"
-                     v-for="item in businessComponents"
-                     :key="item.type"
-                     draggable="true"
-                     @dragstart="handleDragStart($event, item)">
-                  <div class="item-icon">
-                    <el-icon><component :is="item.icon" /></el-icon>
-                  </div>
-                  <div class="item-label">{{ item.label }}</div>
-                </div>
-              </div>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
-      </div>
+      <!-- 使用组件面板组件 -->
+      <components-panel
+        @dragstart="handleComponentDragStart"
+        ref="componentsPanelRef"
+      />
 
       <!-- 中间预览区域 -->
       <section class="preview-panel">
@@ -100,7 +70,7 @@
           <el-icon><Grid /></el-icon>
           <span>组件管理</span>
         </el-button>
-        <el-button type="primary" class="action-btn">
+        <el-button type="primary" class="action-btn" @click="handlePreview">
           <el-icon><View /></el-icon>
           <span>&nbsp;预&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;览&nbsp;</span>
         </el-button>
@@ -114,93 +84,29 @@
       <div class="config-panel">
         <div class="panel-header">{{ getPanelTitle }}</div>
         <div class="panel-content">
-          <!-- 页面配置内容 -->
-          <template v-if="isPageConfig">
-            <el-form label-position="top">
-              <el-form-item label="页面标题">
-                <el-input v-model="pageTitle" placeholder="请输入页面标题" />
-              </el-form-item>
-              <el-form-item label="页面描述">
-                <el-input v-model="pageDesc" type="textarea" rows="3" placeholder="请输入页面描述" />
-              </el-form-item>
-              <!-- 可以根据需要添加更多页面配置项 -->
-            </el-form>
-          </template>
-          <!-- 组件管理内容 -->
-          <template v-else-if="isComponentManage">
-            <div class="component-list">
-              <div class="tip-text">底部导航组件为固定页面底部，无需拖拽调整位置</div>
-              <div v-for="(item, index) in canvasItems" 
-                   :key="item.id"
-                   class="component-list-item"
-                   draggable="true"
-                   @dragstart="handleListDragStart($event, index)"
-                   @dragenter="handleListDragEnter($event, index)"
-                   @dragover.prevent
-                   @dragleave="handleListDragLeave($event)"
-                   @drop="handleListDrop($event, index)"
-                   @dragend="handleListDragEnd">
-                <div class="item-content">
-                  <el-icon><Grid /></el-icon>
-                  <span class="component-name">{{ getComponentLabel(item.type) }}</span>
-                </div>
-                <el-button 
-                  type="danger" 
-                  link
-                  @click="removeItem(index)"
-                  class="delete-btn">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
-              <el-empty v-if="canvasItems.length === 0" description="暂无组件" />
-            </div>
-          </template>
-          <!-- 组件配置内容 -->
-          <template v-else-if="currentItem">
-            <el-form label-position="top">
-              <!-- 根据组件类型显示不同的配置项 -->
-              <template v-if="currentItem.type === 'text'">
-                <el-form-item label="文本内容">
-                  <el-input v-model="currentItem.props.innerHTML" type="textarea" rows="3" />
-                </el-form-item>
-              </template>
-              <template v-else-if="currentItem.type === 'image'">
-                <el-form-item label="图片地址">
-                  <el-input v-model="currentItem.props.src" />
-                </el-form-item>
-                <el-form-item label="图片描述">
-                  <el-input v-model="currentItem.props.alt" />
-                </el-form-item>
-              </template>
-              <template v-else-if="currentItem.type === 'list'">
-                <el-form-item label="列表内容">
-                  <el-input v-model="currentItem.props.innerHTML" type="textarea" rows="5" />
-                </el-form-item>
-              </template>
-            </el-form>
-          </template>
+          <!-- 使用动态组件加载配置面板 -->
+          <component 
+            v-if="currentItem && currentComponent?.configComponent"
+            :is="currentComponent.configComponent"
+            v-model="currentItem.props"
+          />
           <el-empty v-else description="请选择组件" />
         </div>
       </div>
     </div>
+
+    <!-- 预览弹窗 -->
+    <preview-dialog
+      ref="previewDialogRef"
+      :page-title="pageTitle"
+    />
   </div>
 </template>
 
 <script setup>
   import 'vant/lib/index.css';
-import { ref, computed, watch } from 'vue'
-import { Button as VanButton,Cell as VanCell,CellGroup as VanCellGroup,Image as VanImage,Popup as VanPopup,Space as VanSpace,
-  // 表单组件
-  Calendar as VanCalendar, Cascader as VanCascader, Checkbox as VanCheckbox, CheckboxGroup as VanCheckboxGroup, DatePicker as VanDatePicker, Field as VanField, Form as VanForm, NumberKeyboard as VanNumberKeyboard, PasswordInput as VanPasswordInput, Picker as VanPicker, Radio as VanRadio, RadioGroup as VanRadioGroup, Rate as VanRate, Search as VanSearch, Slider as VanSlider, Stepper as VanStepper, Switch as VanSwitch, TimePicker as VanTimePicker, Uploader as VanUploader,
-  // 反馈组件
-  ActionSheet as VanActionSheet, Dialog as VanDialog, DropdownMenu as VanDropdownMenu, DropdownItem as VanDropdownItem, Loading as VanLoading, Notify as VanNotify, Overlay as VanOverlay, PullRefresh as VanPullRefresh, ShareSheet as VanShareSheet, SwipeCell as VanSwipeCell, Toast as VanToast,
-  // 展示组件
-  Badge as VanBadge, Circle as VanCircle, Collapse as VanCollapse, CountDown as VanCountDown, Divider as VanDivider, Empty as VanEmpty, ImagePreview as VanImagePreview, Lazyload as VanLazyload, List as VanList, NoticeBar as VanNoticeBar, Progress as VanProgress, Skeleton as VanSkeleton, Steps as VanSteps, Step as VanStep, Sticky as VanSticky, Swipe as VanSwipe, SwipeItem as VanSwipeItem, Tag as VanTag,
-  // 导航组件
-  ActionBar as VanActionBar, ActionBarIcon as VanActionBarIcon, ActionBarButton as VanActionBarButton, BackTop as VanBackTop, Grid as VanGrid, GridItem as VanGridItem, IndexBar as VanIndexBar, IndexAnchor as VanIndexAnchor, NavBar as VanNavBar, Pagination as VanPagination, Sidebar as VanSidebar, SidebarItem as VanSidebarItem, Tab as VanTab, Tabs as VanTabs, Tabbar as VanTabbar, TabbarItem as VanTabbarItem, TreeSelect as VanTreeSelect,
-  // 业务组件
-  AddressEdit as VanAddressEdit, AddressList as VanAddressList, Area as VanArea, Card as VanCard, ContactCard as VanContactCard, ContactEdit as VanContactEdit, ContactList as VanContactList, Coupon as VanCoupon, CouponCell as VanCouponCell, CouponList as VanCouponList, SubmitBar as VanSubmitBar
-} from 'vant'
+import { ref, computed, watch, onMounted } from 'vue'
+
 import {
   ArrowLeft,
   Document,
@@ -213,6 +119,20 @@ import {
   Setting,
   Delete
 } from '@element-plus/icons-vue'
+import PreviewDialog from '@/components/PreviewDialog.vue'
+import ComponentsPanel from '@/components/drag/ComponentsPanel.vue'
+
+const componentsPanelRef = ref(null)
+const basicComponents = ref([])
+const businessComponents = ref([])
+
+// 在组件挂载后获取组件列表
+onMounted(() => {
+  if (componentsPanelRef.value) {
+    basicComponents.value = componentsPanelRef.value.basicComponents
+    businessComponents.value = componentsPanelRef.value.businessComponents
+  }
+})
 
 const activeCollapse = ref(['basic'])
 const pageTitle = ref('')
@@ -237,597 +157,23 @@ const showDropArea = ref(false)
 const dropAreaIndex = ref(-1)
 const isDragging = ref(false)
 
-// 基础组件
-const basicComponents = [
-  // 基础组件
-  {
-    type: 'vant-button',
-    label: '按钮',
-    icon: Document,
-    component: VanButton,
-    defaultProps: { 
-      type: 'primary',
-      text: '按钮'
-    }
-  },
-  {
-    type: 'vant-cell',
-    label: '单元格',
-    icon: Document,
-    component: VanCell,
-    defaultProps: { 
-      title: '单元格',
-      value: '内容'
-    }
-  },
-  {
-    type: 'vant-cell-group',
-    label: '单元格组',
-    icon: Document,
-    component: VanCellGroup,
-    defaultProps: {
-      title: '分组标题',
-      inset: false
-    }
-  },
-  {
-    type: 'vant-image',
-    label: '图片',
-    icon: Picture,
-    component: VanImage,
-    defaultProps: {
-      width: 100,
-      height: 100,
-      src: 'https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg',
-      fit: 'cover'
-    }
-  },
-  {
-    type: 'vant-popup',
-    label: '弹出层',
-    icon: Document,
-    component: VanPopup,
-    defaultProps: {
-      position: 'center',
-      innerHTML: '弹出层内容'
-    }
-  },
-  {
-    type: 'vant-space',
-    label: '间距',
-    icon: Document,
-    component: VanSpace,
-    defaultProps: {
-      direction: 'horizontal',
-      gap: '16px'
-    }
-  },
+// 处理组件拖拽开始
+const handleComponentDragStart = (e, component) => {
+  isDragging.value = true
+}
 
-  // 表单组件
-  {
-    type: 'vant-calendar',
-    label: '日历',
-    icon: Document,
-    component: VanCalendar,
-    defaultProps: {
-      poppable: false,
-      showConfirm: false
-    }
-  },
-  {
-    type: 'vant-cascader',
-    label: '级联选择',
-    icon: Document,
-    component: VanCascader,
-    defaultProps: {
-      options: [
-        {
-          text: '选项1',
-          value: '1',
-          children: [{ text: '子选项1', value: '11' }]
-        }
-      ]
-    }
-  },
-  {
-    type: 'vant-checkbox',
-    label: '复选框',
-    icon: Document,
-    component: VanCheckbox,
-    defaultProps: {
-      modelValue: false,
-      label: '复选框'
-    }
-  },
-  {
-    type: 'vant-checkbox-group',
-    label: '复选框组',
-    icon: Document,
-    component: VanCheckboxGroup,
-    defaultProps: {
-      modelValue: ['1'],
-      direction: 'horizontal'
-    }
-  },
-  {
-    type: 'vant-date-picker',
-    label: '日期选择',
-    icon: Document,
-    component: VanDatePicker,
-    defaultProps: {
-      title: '选择日期'
-    }
-  },
-  {
-    type: 'vant-field',
-    label: '输入框',
-    icon: Document,
-    component: VanField,
-    defaultProps: {
-      label: '文本',
-      placeholder: '请输入'
-    }
-  },
-  {
-    type: 'vant-form',
-    label: '表单',
-    icon: Document,
-    component: VanForm,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-number-keyboard',
-    label: '数字键盘',
-    icon: Document,
-    component: VanNumberKeyboard,
-    defaultProps: {
-      show: true
-    }
-  },
-  {
-    type: 'vant-password-input',
-    label: '密码输入框',
-    icon: Document,
-    component: VanPasswordInput,
-    defaultProps: {
-      value: '',
-      length: 6
-    }
-  },
-  {
-    type: 'vant-picker',
-    label: '选择器',
-    icon: Document,
-    component: VanPicker,
-    defaultProps: {
-      columns: ['选项1', '选项2', '选项3']
-    }
-  },
-  {
-    type: 'vant-radio',
-    label: '单选框',
-    icon: Document,
-    component: VanRadio,
-    defaultProps: {
-      name: '1'
-    }
-  },
-  {
-    type: 'vant-radio-group',
-    label: '单选框组',
-    icon: Document,
-    component: VanRadioGroup,
-    defaultProps: {
-      modelValue: '1',
-      direction: 'horizontal'
-    }
-  },
-  {
-    type: 'vant-rate',
-    label: '评分',
-    icon: Document,
-    component: VanRate,
-    defaultProps: {
-      modelValue: 3
-    }
-  },
-  {
-    type: 'vant-search',
-    label: '搜索',
-    icon: Document,
-    component: VanSearch,
-    defaultProps: {
-      placeholder: '请输入搜索关键词'
-    }
-  },
-  {
-    type: 'vant-slider',
-    label: '滑块',
-    icon: Document,
-    component: VanSlider,
-    defaultProps: {
-      modelValue: 50
-    }
-  },
-  {
-    type: 'vant-stepper',
-    label: '步进器',
-    icon: Document,
-    component: VanStepper,
-    defaultProps: {
-      modelValue: 1
-    }
-  },
-  {
-    type: 'vant-switch',
-    label: '开关',
-    icon: Document,
-    component: VanSwitch,
-    defaultProps: {
-      modelValue: true
-    }
-  },
-  {
-    type: 'vant-time-picker',
-    label: '时间选择',
-    icon: Document,
-    component: VanTimePicker,
-    defaultProps: {
-      title: '选择时间'
-    }
-  },
-  {
-    type: 'vant-uploader',
-    label: '文件上传',
-    icon: Document,
-    component: VanUploader,
-    defaultProps: {}
-  },
-
-  // 反馈组件
-  {
-    type: 'vant-action-sheet',
-    label: '动作面板',
-    icon: Document,
-    component: VanActionSheet,
-    defaultProps: {
-      actions: [{ name: '选项1' }, { name: '选项2' }],
-      show: false
-    }
-  },
-  {
-    type: 'vant-dropdown-menu',
-    label: '下拉菜单',
-    icon: Document,
-    component: VanDropdownMenu,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-loading',
-    label: '加载',
-    icon: Document,
-    component: VanLoading,
-    defaultProps: {
-      type: 'circular'
-    }
-  },
-  {
-    type: 'vant-overlay',
-    label: '遮罩层',
-    icon: Document,
-    component: VanOverlay,
-    defaultProps: {
-      show: false
-    }
-  },
-  {
-    type: 'vant-pull-refresh',
-    label: '下拉刷新',
-    icon: Document,
-    component: VanPullRefresh,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-share-sheet',
-    label: '分享面板',
-    icon: Document,
-    component: VanShareSheet,
-    defaultProps: {
-      options: [{ name: '微信', icon: 'wechat' }],
-      show: false
-    }
-  },
-  {
-    type: 'vant-swipe-cell',
-    label: '滑动单元格',
-    icon: Document,
-    component: VanSwipeCell,
-    defaultProps: {}
-  },
-
-  // 展示组件
-  {
-    type: 'vant-badge',
-    label: '徽标',
-    icon: Document,
-    component: VanBadge,
-    defaultProps: {
-      content: '5',
-      max: 99
-    }
-  },
-  {
-    type: 'vant-circle',
-    label: '环形进度条',
-    icon: Document,
-    component: VanCircle,
-    defaultProps: {
-      rate: 70,
-      text: '70%'
-    }
-  },
-  {
-    type: 'vant-collapse',
-    label: '折叠面板',
-    icon: Document,
-    component: VanCollapse,
-    defaultProps: {
-      modelValue: ['1']
-    }
-  },
-  {
-    type: 'vant-count-down',
-    label: '倒计时',
-    icon: Document,
-    component: VanCountDown,
-    defaultProps: {
-      time: 30 * 60 * 1000
-    }
-  },
-  {
-    type: 'vant-divider',
-    label: '分割线',
-    icon: Document,
-    component: VanDivider,
-    defaultProps: {
-      innerHTML: '文本'
-    }
-  },
-  {
-    type: 'vant-empty',
-    label: '空状态',
-    icon: Document,
-    component: VanEmpty,
-    defaultProps: {
-      description: '暂无数据'
-    }
-  },
-  {
-    type: 'vant-notice-bar',
-    label: '通知栏',
-    icon: Document,
-    component: VanNoticeBar,
-    defaultProps: {
-      text: '通知内容'
-    }
-  },
-  {
-    type: 'vant-progress',
-    label: '进度条',
-    icon: Document,
-    component: VanProgress,
-    defaultProps: {
-      percentage: 50
-    }
-  },
-  {
-    type: 'vant-skeleton',
-    label: '骨架屏',
-    icon: Document,
-    component: VanSkeleton,
-    defaultProps: {
-      title: true,
-      row: 3
-    }
-  },
-  {
-    type: 'vant-steps',
-    label: '步骤条',
-    icon: Document,
-    component: VanSteps,
-    defaultProps: {
-      active: 1
-    }
-  },
-  {
-    type: 'vant-sticky',
-    label: '粘性布局',
-    icon: Document,
-    component: VanSticky,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-swipe',
-    label: '轮播',
-    icon: Document,
-    component: VanSwipe,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-tag',
-    label: '标签',
-    icon: Document,
-    component: VanTag,
-    defaultProps: {
-      type: 'primary',
-      innerHTML: '标签'
-    }
-  },
-
-  // 导航组件
-  {
-    type: 'vant-action-bar',
-    label: '动作栏',
-    icon: Document,
-    component: VanActionBar,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-back-top',
-    label: '回到顶部',
-    icon: Document,
-    component: VanBackTop,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-grid',
-    label: '宫格',
-    icon: Document,
-    component: VanGrid,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-index-bar',
-    label: '索引栏',
-    icon: Document,
-    component: VanIndexBar,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-nav-bar',
-    label: '导航栏',
-    icon: Document,
-    component: VanNavBar,
-    defaultProps: {
-      title: '标题'
-    }
-  },
-  {
-    type: 'vant-pagination',
-    label: '分页',
-    icon: Document,
-    component: VanPagination,
-    defaultProps: {
-      total: 50
-    }
-  },
-  {
-    type: 'vant-sidebar',
-    label: '侧边导航',
-    icon: Document,
-    component: VanSidebar,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-tab',
-    label: '标签页',
-    icon: Document,
-    component: VanTab,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-tabbar',
-    label: '标签栏',
-    icon: Document,
-    component: VanTabbar,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-tree-select',
-    label: '分类选择',
-    icon: Document,
-    component: VanTreeSelect,
-    defaultProps: {
-      items: [{ text: '分类1' }]
-    }
-  },
-
-  // 业务组件
-  {
-    type: 'vant-address-edit',
-    label: '地址编辑',
-    icon: Document,
-    component: VanAddressEdit,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-address-list',
-    label: '地址列表',
-    icon: Document,
-    component: VanAddressList,
-    defaultProps: {
-      list: []
-    }
-  },
-  {
-    type: 'vant-area',
-    label: '省市区选择',
-    icon: Document,
-    component: VanArea,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-card',
-    label: '商品卡片',
-    icon: Document,
-    component: VanCard,
-    defaultProps: {
-      price: '2.00',
-      title: '商品标题'
-    }
-  },
-  {
-    type: 'vant-contact-card',
-    label: '联系人卡片',
-    icon: Document,
-    component: VanContactCard,
-    defaultProps: {
-      type: 'add'
-    }
-  },
-  {
-    type: 'vant-coupon-cell',
-    label: '优惠券单元格',
-    icon: Document,
-    component: VanCouponCell,
-    defaultProps: {}
-  },
-  {
-    type: 'vant-coupon-list',
-    label: '优惠券列表',
-    icon: Document,
-    component: VanCouponList,
-    defaultProps: {
-      coupons: []
-    }
-  },
-  {
-    type: 'vant-submit-bar',
-    label: '提交订单栏',
-    icon: Document,
-    component: VanSubmitBar,
-    defaultProps: {
-      price: 3050
-    }
-  }
-]
-
-// 业务组件
-const businessComponents = [
-  {
-    type: 'form',
-    label: '表单',
-    icon: Edit,
-    component: 'form',
-    defaultProps: { 
-      innerHTML: '<div style="padding: 10px;">表单内容</div>'
-    }
-  }
-]
 
 // 处理预览
 const handlePreview = () => {
-  // 实现预览逻辑
+  // 复制一份画布数据用于预览
+  const previewData = canvasItems.value.map(item => ({
+    ...item,
+    id: item.id,
+    component: item.component,
+    props: { ...item.props }
+  }))
+  
+  previewDialogRef.value?.open(previewData)
 }
 
 // 处理保存
@@ -918,7 +264,7 @@ const handleDragStart = (e, component) => {
 const handleDrop = (e) => {
   e.preventDefault()
   const type = e.dataTransfer.getData('componentType')
-  const component = [...basicComponents, ...businessComponents].find(c => c.type === type)
+  const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
   
   if (component && dropAreaIndex.value !== -1) {
     const item = {
@@ -959,7 +305,7 @@ const getPanelTitle = computed(() => {
   if (isPageConfig.value) return '页面设置'
   if (isComponentManage.value) return '组件管理'
   if (currentItem.value) {
-    const component = [...basicComponents, ...businessComponents].find(c => c.type === currentItem.value.type)
+    const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === currentItem.value.type)
     return component ? `${component.label}组件配置` : '组件配置'
   }
   return '属性配置'
@@ -1005,13 +351,13 @@ const updateItemProps = (props) => {
 // 获取组件标题
 const getComponentTitle = (type) => {
   if (!type) return null
-  const component = [...basicComponents, ...businessComponents].find(c => c.type === type)
+  const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
   return component ? `${component.label}配置` : '属性配置'
 }
 
 // 获取组件标签名称
 const getComponentLabel = (type) => {
-  const component = [...basicComponents, ...businessComponents].find(c => c.type === type)
+  const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
   return component ? component.label : type
 }
 
@@ -1122,6 +468,33 @@ const handleListDrop = (e, dropIndex) => {
 // 添加 watch 来监控 currentHoverIndex 的变化
 watch(() => currentHoverIndex, (newVal) => {
   console.log('currentHoverIndex changed to:', newVal)
+})
+
+const previewDialogRef = ref(null)
+
+// 添加图片
+const addImage = () => {
+  if (currentItem.value && currentItem.value.type === 'vant-swipe') {
+    currentItem.value.props.images.push({
+      url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-1.jpeg',
+      alt: `图片${currentItem.value.props.images.length + 1}`
+    })
+  }
+}
+
+// 删除图片
+const removeImage = (index) => {
+  if (currentItem.value && currentItem.value.type === 'vant-swipe') {
+    currentItem.value.props.images.splice(index, 1)
+  }
+}
+
+// 获取当前组件的配置信息
+const currentComponent = computed(() => {
+  if (!currentItem.value) return null
+  return [...basicComponents.value, ...businessComponents.value].find(
+    c => c.type === currentItem.value.type
+  )
 })
 </script>
 
@@ -1570,6 +943,25 @@ watch(() => currentHoverIndex, (newVal) => {
       text-overflow: ellipsis;
       text-align: center;
       white-space: nowrap;
+    }
+  }
+}
+
+.image-config-item {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+
+  .image-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    span {
+      font-weight: 500;
+      color: #303133;
     }
   }
 }
