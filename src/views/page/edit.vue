@@ -154,10 +154,6 @@ const currentItem = shallowRef(null)
 // 画布引用
 const canvasRef = shallowRef(null)
 
-// 记录拖拽的起始位置
-let dragStartIndex = -1
-let currentDragElement = null
-
 // 记录当前悬停的目标索引
 let currentHoverIndex = -1
 

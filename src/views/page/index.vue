@@ -160,11 +160,10 @@
 </template>
 
 <script setup>
-import {ref, reactive} from 'vue'
+import {ref} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {Search, RefreshLeft, ArrowDown, Plus, Delete, Refresh, Setting} from '@element-plus/icons-vue'
-import {getPageList, savePage, updatePage, changePageStatus, deletePage,readPage} from '@/api/page'
-
+import {Search, RefreshLeft, ArrowDown, Plus, Delete, Refresh,} from '@element-plus/icons-vue'
+import {getPageList, savePage, updatePage, deletePage} from '@/api/page'
 
 // 将表单默认值提取为常量
 const DEFAULT_FORM_DATA = {
@@ -298,20 +297,6 @@ const resetSearch = () => {
 // 表格选择
 const handleSelectionChange = (rows) => {
   selectedRows.value = rows
-}
-
-// 新增操作优化
-const handleAdd = () => {
-  formData.value = {...DEFAULT_FORM_DATA}
-  dialogTitle.value = '新增'
-  dialogVisible.value = true
-}
-
-// 编辑操作优化
-const handleEdit = (row) => {
-  formData.value = {...row, password: ''}
-  dialogTitle.value = '编辑'
-  dialogVisible.value = true
 }
 
 // 删除操作优化

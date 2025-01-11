@@ -41,7 +41,6 @@
 <script setup>
 import { ref } from 'vue'
 import { ArrowUp, ArrowDown, Delete } from '@element-plus/icons-vue'
-import { it } from 'element-plus/es/locales.mjs'
 
 const props = defineProps({
   modelValue: {
@@ -52,7 +51,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const activeTab = ref('used')
 const usedComponents = ref(props.modelValue)
 
 // 获取组件图标
