@@ -74,7 +74,11 @@
           <el-icon><View /></el-icon>
           <span>&nbsp;预&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;览&nbsp;</span>
         </el-button>
-        <el-button type="primary" class="action-btn">
+        <el-button 
+          type="primary" 
+          class="action-btn"
+          @click="handleSave"
+          :loading="saving">
           <el-icon><Check /></el-icon>
           <span>&nbsp;保&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;存&nbsp;</span>
         </el-button>
@@ -104,8 +108,90 @@
 </template>
 
 <script setup>
-  import 'vant/lib/index.css';
+import 'vant/lib/index.css';
 import { ref, computed, watch, onMounted, markRaw, shallowRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElLoading } from 'element-plus'
+import { savePage, updatePage, readPage } from '@/api/page'
+
+const route = useRoute()
+const router = useRouter()
+
+// 获取路由参数
+const pageId = route.query.id
+const saving = ref(false)
+
+// 页面配置数据 - 使用 PageConfig 的默认值
+const pageConfig = ref({
+  title: '页面标题',
+  description: '页面描述',
+  enabled: true
+})
+
+// 初始化页面数据
+const initPageData = async () => {
+  if (!pageId || pageId <= 0) {
+    // 如果是新建页面，使用默认配置
+    pageConfig.value = {
+      title: '页面标题',
+      description: '页面描述',
+      enabled: true
+    }
+    return
+  }
+  
+  let loading = null
+  try {
+    loading = ElLoading.service({
+      lock: true,
+      text: '加载中...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    })
+
+    const { data } = await readPage(pageId)
+    if (data) {
+      // 填充页面配置
+      pageConfig.value = {
+        title: data.title || '页面标题',
+        description: data.description || '页面描述',
+        enabled: data.enabled ?? true
+      }
+
+      // 填充组件数据
+      if (data.components && Array.isArray(data.components)) {
+        // 查找组件定义并创建组件实例
+        const components = data.components.map(item => {
+          const componentDef = [...basicComponents.value, ...businessComponents.value]
+            .find(c => c.type === item.type)
+          
+          if (componentDef) {
+            return {
+              id: Date.now() + Math.random(), // 生成唯一ID
+              type: item.type,
+              component: markRaw(componentDef.component),
+              props: { ...item.props }
+            }
+          }
+          return null
+        }).filter(Boolean) // 过滤掉无效组件
+
+        canvasItems.value = components
+      }
+    }
+  } catch (error) {
+    console.error('加载页面数据失败:', error)
+    ElMessage.error(error.message || '加载页面数据失败')
+  } finally {
+    if (loading) {
+      loading.close()
+    }
+  }
+}
+
+// 在组件挂载后初始化数据
+onMounted(() => {
+  initPageData()
+})
 
 import {
   ArrowLeft,
@@ -143,7 +229,6 @@ onMounted(() => {
 })
 
 const activeCollapse = ref(['basic'])
-const pageTitle = ref('')
 const pageDesc = ref('')
 
 // 画布中的组件列表
@@ -165,6 +250,7 @@ const showDropArea = ref(false)
 const dropAreaIndex = ref(-1)
 const isDragging = ref(false)
 
+
 // 处理组件拖拽开始
 const handleComponentDragStart = (e, component) => {
   isDragging.value = true
@@ -184,10 +270,18 @@ const handlePreview = () => {
   previewDialogRef.value?.open(previewData)
 }
 
-// 处理保存
-const handleSave = () => {
-  // 实现保存逻辑
-}
+// 添加表单数据
+const formData = computed(() => ({
+  title: pageConfig.value.title,
+  description: pageConfig.value.description,
+  enabled: pageConfig.value.enabled,
+  components: canvasItems.value.map(item => ({
+    type: item.type,
+    props: item.props,
+    sort: item.sort // 如果需要排序
+  }))
+}))
+
 
 // 重置拖拽状态
 const resetDragState = () => {
@@ -510,12 +604,8 @@ const currentComponent = computed(() => {
   )
 })
 
-// 页面配置数据
-const pageConfig = ref({
-  title: '',
-  description: '',
-  enabled: true
-})
+// 获取页面标题
+const pageTitle = computed(() => pageConfig.value.title)
 
 // 获取当前配置组件
 const currentConfigComponent = computed(() => {
@@ -568,6 +658,42 @@ const handleConfigUpdate = (val) => {
       // 更新当前选中项
       currentItem.value = newItems[index]
     }
+  }
+}
+
+// 处理保存
+const handleSave = async () => {
+  if (saving.value) return
+  
+  let loading = null
+  try {
+    saving.value = true
+    loading = ElLoading.service({
+      lock: true,
+      text: '保存中...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    })
+
+    // 根据是否有 pageId 判断是新增还是更新
+    const apiCall = pageId
+      ? () => updatePage(pageId, formData.value)
+      : () => savePage(formData.value)
+
+    await apiCall()
+    
+    ElMessage.success('保存成功')
+    
+    // 保存成功后返回列表页
+    router.push('/page/index')
+    
+  } catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error(error.message || '保存失败')
+  } finally {
+    if (loading) {
+      loading.close()
+    }
+    saving.value = false
   }
 }
 </script>

@@ -46,6 +46,16 @@ const routes = [
                 meta: { title: '微信菜单管理' }
             },
             {
+                path: '/page/index',
+                component: () => import('@/views/page/index.vue'),
+                meta: { title: '页面管理' }
+            },
+            {
+                path: '/page/edit',
+                component: () => import('@/views/page/edit.vue'),
+                meta: { title: '页面编辑' }
+            },
+            {
                 path: '/drag/index',
                 component: () => import('@/views/drag/index.vue'),
                 meta: { title: '拖拽管理' }

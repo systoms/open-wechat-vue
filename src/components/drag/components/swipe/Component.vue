@@ -20,6 +20,8 @@
   <style scoped>
   .my-swipe {
     height: 200px;
+    margin: 5px 10px;
+    border-radius: 5px;
   }
   
   .swipe-image {
