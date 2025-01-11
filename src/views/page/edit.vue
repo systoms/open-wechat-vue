@@ -3,46 +3,48 @@
     <div class="page-content">
       <!-- 使用组件面板组件 -->
       <components-panel
-        @dragstart="handleComponentDragStart"
-        ref="componentsPanelRef"
+          @dragstart="handleComponentDragStart"
+          ref="componentsPanelRef"
       />
 
       <!-- 中间预览区域 -->
       <section class="preview-panel">
         <section class="preview-wrapper">
-          <img src="@/assets/phone.png" class="status-bar" alt="phone status" />
+          <img src="@/assets/phone.png" class="status-bar" alt="phone status"/>
           <div class="preview-header">
             <div class="header-back">
-              <el-icon><ArrowLeft /></el-icon>
+              <el-icon>
+                <ArrowLeft/>
+              </el-icon>
             </div>
             <div class="header-title">
               <span>{{ pageTitle || '页面标题' }}</span>
             </div>
           </div>
           <!-- 内层容器用于滚动 -->
-          <section class="preview-container" 
-                @dragover="handlePreviewDragOver"
-                @drop.prevent="handleDrop"
-                @dragend.prevent="handleDragEnd"
-                ref="canvasRef">
+          <section class="preview-container"
+                   @dragover="handlePreviewDragOver"
+                   @drop.prevent="handleDrop"
+                   @dragend.prevent="handleDragEnd"
+                   ref="canvasRef">
             <section class="canvas-content">
               <template v-for="(item, index) in canvasItems" :key="item.id">
                 <!-- 在每个组件前显示放置区域 -->
                 <div v-if="showDropArea && dropAreaIndex === index"
-                      class="placementarea">
+                     class="placementarea">
                   <div class="drop-text">组件放置区域</div>
                   <div class="drop-desc">松开鼠标，完成组件插入</div>
                 </div>
-                
+
                 <div class="canvas-item"
-                      :class="{ active: currentItem?.id === item.id }"
-                      :style="getItemStyle(item)"
-                      @click="selectItem(item)">
-                  <component :is="item.component" v-bind="item.props" />
+                     :class="{ active: currentItem?.id === item.id }"
+                     :style="getItemStyle(item)"
+                     @click="selectItem(item)">
+                  <component :is="item.component" v-bind="item.props"/>
                   <div class="component-tag">
                     <span>{{ getComponentLabel(item.type) }}</span>
                     <el-icon class="delete-icon" @click.stop="removeItem(index)">
-                      <Delete />
+                      <Delete/>
                     </el-icon>
                     <div class="tag-arrow"></div>
                   </div>
@@ -51,7 +53,7 @@
 
               <!-- 在末尾显示放置区域 -->
               <div v-if="showDropArea && dropAreaIndex === canvasItems.length"
-                    class="placementarea">
+                   class="placementarea">
                 <div class="drop-text">组件放置区域</div>
                 <div class="drop-desc">松开鼠标，完成组件插入</div>
               </div>
@@ -63,23 +65,31 @@
       <!-- 操作按钮 - 浮动样式 -->
       <div class="action-panel">
         <el-button type="primary" class="action-btn" @click="handlePageConfig">
-          <el-icon><Setting /></el-icon>
+          <el-icon>
+            <Setting/>
+          </el-icon>
           <span>页面设置</span>
         </el-button>
         <el-button type="primary" class="action-btn" @click="handleComponentManage">
-          <el-icon><Grid /></el-icon>
+          <el-icon>
+            <Grid/>
+          </el-icon>
           <span>组件管理</span>
         </el-button>
         <el-button type="primary" class="action-btn" @click="handlePreview">
-          <el-icon><View /></el-icon>
+          <el-icon>
+            <View/>
+          </el-icon>
           <span>&nbsp;预&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;览&nbsp;</span>
         </el-button>
-        <el-button 
-          type="primary" 
-          class="action-btn"
-          @click="handleSave"
-          :loading="saving">
-          <el-icon><Check /></el-icon>
+        <el-button
+            type="primary"
+            class="action-btn"
+            @click="handleSave"
+            :loading="saving">
+          <el-icon>
+            <Check/>
+          </el-icon>
           <span>&nbsp;保&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;存&nbsp;</span>
         </el-button>
       </div>
@@ -88,31 +98,40 @@
       <div class="config-panel">
         <div class="panel-header">{{ getPanelTitle }}</div>
         <div class="panel-content">
-          <component 
-            v-if="currentConfigComponent"
-            :is="currentConfigComponent"
-            v-model="currentConfigData"
-            @update:modelValue="handleConfigUpdate"
+          <component
+              v-if="currentConfigComponent"
+              :is="currentConfigComponent"
+              v-model="currentConfigData"
+              @update:modelValue="handleConfigUpdate"
           />
-          <el-empty v-else description="请选择组件" />
+          <el-empty v-else description="请选择组件"/>
         </div>
       </div>
     </div>
 
     <!-- 预览弹窗 -->
     <preview-dialog
-      ref="previewDialogRef"
-      :page-title="pageTitle"
+        ref="previewDialogRef"
+        :page-title="pageTitle"
     />
   </div>
 </template>
 
 <script setup>
 import 'vant/lib/index.css';
-import { ref, computed, watch, onMounted, markRaw, shallowRef } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElLoading } from 'element-plus'
-import { savePage, updatePage, readPage } from '@/api/page'
+import {computed, markRaw, onMounted, ref, shallowRef, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {ElLoading, ElMessage} from 'element-plus'
+import {readPage, savePage, updatePage} from '@/api/page'
+import {ArrowLeft, Check, Delete, Grid, Setting, View} from '@element-plus/icons-vue'
+import PreviewDialog from '@/components/PreviewDialog.vue'
+import ComponentsPanel from '@/components/drag/ComponentsPanel.vue'
+import PageConfig from '@/components/drag/config/PageConfig.vue'
+import ComponentManage from '@/components/drag/config/ComponentManage.vue'
+
+const componentsPanelRef = shallowRef(null)
+const basicComponents = shallowRef([])
+const businessComponents = shallowRef([])
 
 const route = useRoute()
 const router = useRouter()
@@ -127,109 +146,6 @@ const pageConfig = ref({
   description: '页面描述',
   enabled: true
 })
-
-// 初始化页面数据
-const initPageData = async () => {
-  if (!pageId || pageId <= 0) {
-    // 如果是新建页面，使用默认配置
-    pageConfig.value = {
-      title: '页面标题',
-      description: '页面描述',
-      enabled: true
-    }
-    return
-  }
-  
-  let loading = null
-  try {
-    loading = ElLoading.service({
-      lock: true,
-      text: '加载中...',
-      background: 'rgba(0, 0, 0, 0.7)'
-    })
-
-    const { data } = await readPage(pageId)
-    if (data) {
-      // 填充页面配置
-      pageConfig.value = {
-        title: data.title || '页面标题',
-        description: data.description || '页面描述',
-        enabled: data.enabled ?? true
-      }
-
-      // 填充组件数据
-      if (data.components && Array.isArray(data.components)) {
-        // 查找组件定义并创建组件实例
-        const components = data.components.map(item => {
-          const componentDef = [...basicComponents.value, ...businessComponents.value]
-            .find(c => c.type === item.type)
-          
-          if (componentDef) {
-            return {
-              id: Date.now() + Math.random(), // 生成唯一ID
-              type: item.type,
-              component: markRaw(componentDef.component),
-              props: { ...item.props }
-            }
-          }
-          return null
-        }).filter(Boolean) // 过滤掉无效组件
-
-        canvasItems.value = components
-      }
-    }
-  } catch (error) {
-    console.error('加载页面数据失败:', error)
-    ElMessage.error(error.message || '加载页面数据失败')
-  } finally {
-    if (loading) {
-      loading.close()
-    }
-  }
-}
-
-// 在组件挂载后初始化数据
-onMounted(() => {
-  initPageData()
-})
-
-import {
-  ArrowLeft,
-  Document,
-  Picture,
-  List,
-  Edit,
-  Grid,
-  View,
-  Check,
-  Setting,
-  Delete
-} from '@element-plus/icons-vue'
-import PreviewDialog from '@/components/PreviewDialog.vue'
-import ComponentsPanel from '@/components/drag/ComponentsPanel.vue'
-import PageConfig from '@/components/drag/config/PageConfig.vue'
-import ComponentManage from '@/components/drag/config/ComponentManage.vue'
-
-const componentsPanelRef = shallowRef(null)
-const basicComponents = shallowRef([])
-const businessComponents = shallowRef([])
-
-// 在组件挂载后获取组件列表
-onMounted(() => {
-  if (componentsPanelRef.value) {
-    basicComponents.value = componentsPanelRef.value.basicComponents.map(comp => ({
-      ...comp,
-      component: markRaw(comp.component)
-    }))
-    businessComponents.value = componentsPanelRef.value.businessComponents.map(comp => ({
-      ...comp,
-      component: markRaw(comp.component)
-    }))
-  }
-})
-
-const activeCollapse = ref(['basic'])
-const pageDesc = ref('')
 
 // 画布中的组件列表
 const canvasItems = shallowRef([])
@@ -250,13 +166,78 @@ const showDropArea = ref(false)
 const dropAreaIndex = ref(-1)
 const isDragging = ref(false)
 
+// 获取页面标题
+const pageTitle = computed(() => pageConfig.value.title)
+
+const previewDialogRef = shallowRef(null)
+
+// 面板状态控制
+const isPageConfig = ref(true)
+const isComponentManage = ref(false)
+
+// 初始化页面数据
+const initPageData = async () => {
+  if (!pageId || pageId <= 0) {
+    // 如果是新建页面，使用默认配置
+    pageConfig.value = {
+      title: '页面标题',
+      description: '页面描述',
+      enabled: true
+    }
+    return
+  }
+
+  let loading = null
+  try {
+    loading = ElLoading.service({
+      lock: true,
+      text: '加载中...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    })
+
+    const {data} = await readPage(pageId)
+    if (data) {
+      // 填充页面配置
+      pageConfig.value = {
+        title: data.title || '页面标题',
+        description: data.description || '页面描述',
+        enabled: data.enabled ?? true
+      }
+
+      // 填充组件数据
+      if (data.components && Array.isArray(data.components)) {
+        // 查找组件定义并创建组件实例
+         // 过滤掉无效组件
+        canvasItems.value = data.components.map(item => {
+          const componentDef = [...basicComponents.value, ...businessComponents.value]
+              .find(c => c.type === item.type)
+
+          if (componentDef) {
+            return {
+              id: Date.now() + Math.random(), // 生成唯一ID
+              type: item.type,
+              component: markRaw(componentDef.component),
+              props: {...item.props}
+            }
+          }
+          return null
+        }).filter(Boolean)
+      }
+    }
+  } catch (error) {
+    console.error('加载页面数据失败:', error)
+    ElMessage.error(error.message || '加载页面数据失败')
+  } finally {
+    if (loading) {
+      loading.close()
+    }
+  }
+}
 
 // 处理组件拖拽开始
 const handleComponentDragStart = (e, component) => {
   isDragging.value = true
 }
-
-
 // 处理预览
 const handlePreview = () => {
   // 复制一份画布数据用于预览
@@ -264,9 +245,9 @@ const handlePreview = () => {
     ...item,
     id: item.id,
     component: item.component,
-    props: { ...item.props }
+    props: {...item.props}
   }))
-  
+
   previewDialogRef.value?.open(previewData)
 }
 
@@ -282,49 +263,11 @@ const formData = computed(() => ({
   }))
 }))
 
-
 // 重置拖拽状态
 const resetDragState = () => {
   isDragging.value = false
   showDropArea.value = false
   dropAreaIndex.value = -1
-}
-
-// 处理组件拖入
-const handleItemDragEnter = (e, index) => {
-  e.stopPropagation()
-  const item = e.currentTarget
-  const rect = item.getBoundingClientRect()
-  const mouseY = e.clientY - rect.top
-  const middleY = rect.height / 2
-  
-  showDropArea.value = true
-  dropAreaIndex.value = mouseY < middleY ? index : index + 1
-}
-
-// 处理预览区域拖入
-const handlePreviewDragEnter = (e) => {
-  e.preventDefault()
-  e.stopPropagation()
-  
-  if (e.target === e.currentTarget) {
-    showDropArea.value = true
-    if (canvasItems.value.length === 0) {
-      dropAreaIndex.value = 0
-    } else {
-      dropAreaIndex.value = canvasItems.value.length
-    }
-  }
-}
-
-// 处理拖拽离开
-const handlePreviewDragLeave = (e) => {
-  e.preventDefault()
-  const relatedTarget = e.relatedTarget
-  if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
-    showDropArea.value = false
-    dropAreaIndex.value = -1
-  }
 }
 
 // 处理预览区域拖动
@@ -355,27 +298,20 @@ const handlePreviewDragOver = (e) => {
   }
 }
 
-// 处理拖拽开始
-const handleDragStart = (e, component) => {
-  isDragging.value = true
-  e.dataTransfer.setData('componentType', component.type)
-  e.dataTransfer.effectAllowed = 'move'
-}
-
 // 处理拖拽放置
 const handleDrop = (e) => {
   e.preventDefault()
   const type = e.dataTransfer.getData('componentType')
   const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
-  
+
   if (component && dropAreaIndex.value !== -1) {
     const item = {
       id: Date.now(),
       type: component.type,
       component: markRaw(component.component),
-      props: component.getDefaultProps ? component.getDefaultProps() : { ...component.defaultProps }
+      props: component.getDefaultProps ? component.getDefaultProps() : {...component.defaultProps}
     }
-    
+
     canvasItems.value = [
       ...canvasItems.value.slice(0, dropAreaIndex.value),
       item,
@@ -384,7 +320,7 @@ const handleDrop = (e) => {
     currentItem.value = item
     isPageConfig.value = false
   }
-  
+
   resetDragState()
 }
 
@@ -401,10 +337,6 @@ const getItemStyle = (item) => {
     boxSizing: 'border-box',
   }
 }
-
-// 面板状态控制
-const isPageConfig = ref(true)
-const isComponentManage = ref(false)
 
 // 获取面板标题
 const getPanelTitle = computed(() => {
@@ -448,164 +380,19 @@ const removeItem = (index) => {
   canvasItems.value = canvasItems.value.filter((_, i) => i !== index)
 }
 
-// 更新组件属性
-const updateItemProps = (props) => {
-  if (currentItem.value) {
-    currentItem.value.props = props
-  }
-}
-
-// 获取组件标题
-const getComponentTitle = (type) => {
-  if (!type) return null
-  const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
-  return component ? `${component.label}配置` : '属性配置'
-}
-
 // 获取组件标签名称
 const getComponentLabel = (type) => {
   const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
   return component ? component.label : type
 }
 
-// 处理列表项拖拽开始
-const handleListDragStart = (e, index) => {
-  dragStartIndex = index
-  currentDragElement = e.target
-  e.target.classList.add('dragging')
-  e.dataTransfer.effectAllowed = 'move'
-}
-
-// 处理列表项拖拽进入
-const handleListDragEnter = (e, index) => {
-  if (currentHoverIndex === index) return
-  
-  let targetItem = e.target
-  while (targetItem && !targetItem.classList.contains('component-list-item')) {
-    targetItem = targetItem.parentElement
-  }
-  
-  if (!targetItem || targetItem === currentDragElement) return
-  
-  const rect = targetItem.getBoundingClientRect()
-  const mouseY = e.clientY - rect.top
-  const isInUpperHalf = mouseY < rect.height / 2
-  
-  currentHoverIndex = index
-  
-  // 清除所有项的状态
-  const items = document.querySelectorAll('.component-list-item')
-  items.forEach(item => {
-    item.classList.remove('drag-over-top', 'drag-over-bottom')
-  })
-  
-  // 添加新的状态
-  if (isInUpperHalf) {
-    targetItem.classList.add('drag-over-top')
-  } else {
-    targetItem.classList.add('drag-over-bottom')
-  }
-}
-
-// 处理列表项拖拽离开
-const handleListDragLeave = (e) => {
-  let relatedTarget = e.relatedTarget
-  while (relatedTarget && !relatedTarget.classList.contains('component-list-item')) {
-    relatedTarget = relatedTarget.parentElement
-  }
-  
-  if (relatedTarget && relatedTarget.classList.contains('component-list-item')) return
-  
-  currentHoverIndex = -1
-  const items = document.querySelectorAll('.component-list-item')
-  items.forEach(item => {
-    item.classList.remove('drag-over-top', 'drag-over-bottom')
-  })
-}
-
-// 处理列表项拖拽结束
-const handleListDragEnd = () => {
-  currentHoverIndex = -1
-  const items = document.querySelectorAll('.component-list-item')
-  items.forEach(item => {
-    item.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom')
-  })
-  currentDragElement = null
-}
-
-// 处理列表项放置
-const handleListDrop = (e, dropIndex) => {
-  e.preventDefault()
-  if (dragStartIndex === dropIndex) return
-  
-  // 获取目标元素
-  let targetItem = e.target
-  while (targetItem && !targetItem.classList.contains('component-list-item')) {
-    targetItem = targetItem.parentElement
-  }
-  
-  if (!targetItem) return
-  
-  // 获取鼠标在目标元素中的相对位置
-  const rect = targetItem.getBoundingClientRect()
-  const mouseY = e.clientY - rect.top
-  const isInUpperHalf = mouseY < rect.height / 2
-  
-  // 调整插入位置
-  let finalDropIndex = dropIndex
-  if (dragStartIndex < dropIndex && !isInUpperHalf) {
-    finalDropIndex -= 1
-  } else if (dragStartIndex > dropIndex && isInUpperHalf) {
-    finalDropIndex += 1
-  }
-  
-  // 获取要移动的项
-  const item = canvasItems.value[dragStartIndex]
-  // 从数组中删除该项
-  canvasItems.value.splice(dragStartIndex, 1)
-  // 在新位置插入该项
-  canvasItems.value.splice(finalDropIndex, 0, item)
-  
-  // 重置所有状态
-  currentHoverIndex = -1
-  handleListDragEnd()
-  dragStartIndex = -1
-}
-
-// 添加 watch 来监控 currentHoverIndex 的变化
-watch(() => currentHoverIndex, (newVal) => {
-  console.log('currentHoverIndex changed to:', newVal)
-})
-
-const previewDialogRef = shallowRef(null)
-
-// 添加图片
-const addImage = () => {
-  if (currentItem.value && currentItem.value.type === 'vant-swipe') {
-    currentItem.value.props.images.push({
-      url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-1.jpeg',
-      alt: `图片${currentItem.value.props.images.length + 1}`
-    })
-  }
-}
-
-// 删除图片
-const removeImage = (index) => {
-  if (currentItem.value && currentItem.value.type === 'vant-swipe') {
-    currentItem.value.props.images.splice(index, 1)
-  }
-}
-
 // 获取当前组件的配置信息
 const currentComponent = computed(() => {
   if (!currentItem.value) return null
   return [...basicComponents.value, ...businessComponents.value].find(
-    c => c.type === currentItem.value.type
+      c => c.type === currentItem.value.type
   )
 })
-
-// 获取页面标题
-const pageTitle = computed(() => pageConfig.value.title)
 
 // 获取当前配置组件
 const currentConfigComponent = computed(() => {
@@ -664,7 +451,7 @@ const handleConfigUpdate = (val) => {
 // 处理保存
 const handleSave = async () => {
   if (saving.value) return
-  
+
   let loading = null
   try {
     saving.value = true
@@ -676,16 +463,16 @@ const handleSave = async () => {
 
     // 根据是否有 pageId 判断是新增还是更新
     const apiCall = pageId
-      ? () => updatePage(pageId, formData.value)
-      : () => savePage(formData.value)
+        ? () => updatePage(pageId, formData.value)
+        : () => savePage(formData.value)
 
     await apiCall()
-    
+
     ElMessage.success('保存成功')
-    
+
     // 保存成功后返回列表页
     router.push('/page/index')
-    
+
   } catch (error) {
     console.error('保存失败:', error)
     ElMessage.error(error.message || '保存失败')
@@ -696,6 +483,26 @@ const handleSave = async () => {
     saving.value = false
   }
 }
+
+// 在组件挂载后初始化数据
+onMounted(() => {
+  initPageData()
+  if (componentsPanelRef.value) {
+    basicComponents.value = componentsPanelRef.value.basicComponents.map(comp => ({
+      ...comp,
+      component: markRaw(comp.component)
+    }))
+    businessComponents.value = componentsPanelRef.value.businessComponents.map(comp => ({
+      ...comp,
+      component: markRaw(comp.component)
+    }))
+  }
+})
+
+// 添加 watch 来监控 currentHoverIndex 的变化
+watch(() => currentHoverIndex, (newVal) => {
+  console.log('currentHoverIndex changed to:', newVal)
+})
 </script>
 
 <style lang="less" scoped>
@@ -726,8 +533,8 @@ const handleSave = async () => {
   -webkit-box-pack: center;
   -ms-flex-pack: center;
   justify-content: center;
-    background: #f7f8fa;
-  
+  background: #f7f8fa;
+
   .preview-wrapper {
     width: 375px;
     min-height: 760px;
@@ -742,7 +549,7 @@ const handleSave = async () => {
     display: block;
     object-fit: contain;
   }
-  
+
   .preview-header {
     height: 44px;
     display: flex;
@@ -750,7 +557,7 @@ const handleSave = async () => {
     border-bottom: 1px solid #f0f0f0;
     background: #fff;
     position: relative;
-    
+
     .header-back {
       position: absolute;
       left: 10px;
@@ -759,17 +566,17 @@ const handleSave = async () => {
       display: flex;
       align-items: center;
       height: 44px;
-      
+
       .el-icon {
         font-size: 14px;
         color: #303133;
       }
     }
-    
+
     .header-title {
       flex: 1;
       text-align: center;
-      
+
       span {
         font-size: 14px;
         color: #303133;
@@ -778,7 +585,7 @@ const handleSave = async () => {
       }
     }
   }
-  
+
   .preview-container {
     min-height: 603px;
     -webkit-box-sizing: border-box;
@@ -849,25 +656,25 @@ const handleSave = async () => {
     border: none;
     border-radius: 4px;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-    
+
     &:first-child {
       margin-right: auto;
     }
-    
+
     &:not(:first-child) {
       margin-left: auto;
     }
-    
+
     &:hover {
       color: #409eff;
       background: #ecf5ff;
       border: none;
     }
-    
+
     :deep(.el-icon) {
       font-size: 14px;
     }
-    
+
     span {
       font-size: 13px;
       font-weight: 400;
@@ -893,14 +700,14 @@ const handleSave = async () => {
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
     cursor: move;
     position: relative;
-    
+
     &.dragging {
       opacity: 0.5;
       background: #f5f7fa;
       box-shadow: none;
       border: 1px solid #e4e7ed;
     }
-    
+
     &.drag-over-top {
       &::before {
         content: '';
@@ -912,7 +719,7 @@ const handleSave = async () => {
         background-color: #409eff;
       }
     }
-    
+
     &.drag-over-bottom {
       &::after {
         content: '';
@@ -924,16 +731,16 @@ const handleSave = async () => {
         background-color: #409eff;
       }
     }
-    
+
     &:hover {
       background: #f5f7fa;
     }
-    
+
     .item-content {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       .el-icon {
         font-size: 16px;
         color: #909399;
@@ -942,7 +749,7 @@ const handleSave = async () => {
         width: 16px;
         height: 16px;
       }
-      
+
       .component-name {
         font-size: 14px;
         color: #303133;
@@ -962,24 +769,24 @@ const handleSave = async () => {
   justify-content: center;
   pointer-events: none;
   transition: all 0.3s;
-  
+
   .drop-icon {
     color: #409eff;
     margin-bottom: 8px;
-    
+
     .el-icon {
       font-size: 24px;
       animation: bounce 1s infinite;
     }
   }
-  
+
   .drop-text {
     font-size: 14px;
     color: #409eff;
     font-weight: 500;
     margin-bottom: 4px;
   }
-  
+
   .drop-desc {
     font-size: 12px;
     color: #909399;
@@ -1002,7 +809,7 @@ const handleSave = async () => {
   border: 1px solid transparent;
   width: 100%;
   box-sizing: border-box;
-  
+
   &.active {
     border: 1px solid #409eff !important;
   }
@@ -1095,7 +902,7 @@ const handleSave = async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-    
+
     span {
       font-weight: 500;
       color: #303133;
