@@ -30,69 +30,26 @@
             <section class="canvas-content">
               <template v-for="(item, index) in canvasItems" :key="item.id">
                 <!-- 在每个组件前显示放置区域 -->
-                <div v-if="showDropArea && dropAreaIndex === index"
-                     class="placementarea">
-                  <div class="drop-text">组件放置区域</div>
-                  <div class="drop-desc">松开鼠标，完成组件插入</div>
-                </div>
+                <PlacementArea v-if="showDropArea && dropAreaIndex === index"></PlacementArea>
 
                 <div class="canvas-item"
                      :class="{ active: currentItem?.id === item.id }"
                      :style="getItemStyle(item)"
                      @click="selectItem(item)">
                   <component :is="item.component" v-bind="item.props"/>
-                  <div class="component-tag">
-                    <span>{{ getComponentLabel(item.type) }}</span>
-                    <el-icon class="delete-icon" @click.stop="removeItem(index)">
-                      <Delete/>
-                    </el-icon>
-                    <div class="tag-arrow"></div>
-                  </div>
+                  <ComponentTag :index="index" :item="item" @remove="removeItem"></ComponentTag>
                 </div>
               </template>
 
               <!-- 在末尾显示放置区域 -->
-              <div v-if="showDropArea && dropAreaIndex === canvasItems.length"
-                   class="placementarea">
-                <div class="drop-text">组件放置区域</div>
-                <div class="drop-desc">松开鼠标，完成组件插入</div>
-              </div>
+              <PlacementArea v-if="showDropArea && dropAreaIndex === canvasItems.length"></PlacementArea>
             </section>
           </section>
         </section>
       </section>
 
       <!-- 操作按钮 - 浮动样式 -->
-      <div class="action-panel">
-        <el-button type="primary" class="action-btn" @click="handlePageConfig">
-          <el-icon>
-            <Setting/>
-          </el-icon>
-          <span>页面设置</span>
-        </el-button>
-        <el-button type="primary" class="action-btn" @click="handleComponentManage">
-          <el-icon>
-            <Grid/>
-          </el-icon>
-          <span>组件管理</span>
-        </el-button>
-        <el-button type="primary" class="action-btn" @click="handlePreview">
-          <el-icon>
-            <View/>
-          </el-icon>
-          <span>&nbsp;预&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;览&nbsp;</span>
-        </el-button>
-        <el-button
-            type="primary"
-            class="action-btn"
-            @click="handleSave"
-            :loading="saving">
-          <el-icon>
-            <Check/>
-          </el-icon>
-          <span>&nbsp;保&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;存&nbsp;</span>
-        </el-button>
-      </div>
+      <ActionPanel @page-config="handlePageConfig" @component-manage="handleComponentManage" @preview="handlePreview" @save="handleSave" :saving="saving"></ActionPanel>
 
       <!-- 右侧配置面板 -->
       <div class="config-panel">
@@ -128,6 +85,10 @@ import PreviewDialog from '@/components/PreviewDialog.vue'
 import ComponentsPanel from '@/components/drag/ComponentsPanel.vue'
 import PageConfig from '@/components/drag/config/PageConfig.vue'
 import ComponentManage from '@/components/drag/config/ComponentManage.vue'
+import ActionPanel from './ActionPanel.vue'
+import PlacementArea from './PlacementArea.vue'
+import ComponentTag from './ComponentTag.vue'
+
 
 const componentsPanelRef = shallowRef(null)
 const basicComponents = shallowRef([])
@@ -174,12 +135,6 @@ const isComponentManage = ref(false)
 // 初始化页面数据
 const initPageData = async () => {
   if (!pageId || pageId <= 0) {
-    // 如果是新建页面，使用默认配置
-    pageConfig.value = {
-      title: '页面标题',
-      description: '页面描述',
-      enabled: true
-    }
     return
   }
 
@@ -203,7 +158,7 @@ const initPageData = async () => {
       // 填充组件数据
       if (data.components && Array.isArray(data.components)) {
         // 查找组件定义并创建组件实例
-         // 过滤掉无效组件
+        // 过滤掉无效组件
         canvasItems.value = data.components.map(item => {
           const componentDef = [...basicComponents.value, ...businessComponents.value]
               .find(c => c.type === item.type)
@@ -230,10 +185,7 @@ const initPageData = async () => {
   }
 }
 
-// 处理组件拖拽开始
-const handleComponentDragStart = (e, component) => {
-  isDragging.value = true
-}
+
 // 处理预览
 const handlePreview = () => {
   // 复制一份画布数据用于预览
@@ -258,6 +210,13 @@ const formData = computed(() => ({
     sort: item.sort // 如果需要排序
   }))
 }))
+
+
+// 处理组件拖拽开始
+const handleComponentDragStart = (e, component) => {
+  isDragging.value = true
+}
+
 
 // 重置拖拽状态
 const resetDragState = () => {
@@ -304,6 +263,7 @@ const handleDrop = (e) => {
     const item = {
       id: Date.now(),
       type: component.type,
+      label: component.label,
       component: markRaw(component.component),
       props: component.getDefaultProps ? component.getDefaultProps() : {...component.defaultProps}
     }
@@ -633,50 +593,7 @@ watch(() => currentHoverIndex, (newVal) => {
   }
 }
 
-.action-panel {
-  position: absolute;
-  right: 340px;
-  top: 47px;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 90px;
 
-  .action-btn {
-    width: 90px;
-    justify-content: flex-start;
-    padding: 7px 8px;
-    background: #fff;
-    color: #606266;
-    border: none;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-
-    &:first-child {
-      margin-right: auto;
-    }
-
-    &:not(:first-child) {
-      margin-left: auto;
-    }
-
-    &:hover {
-      color: #409eff;
-      background: #ecf5ff;
-      border: none;
-    }
-
-    :deep(.el-icon) {
-      font-size: 14px;
-    }
-
-    span {
-      font-size: 13px;
-      font-weight: 400;
-    }
-  }
-}
 
 .component-list {
   .tip-text {
@@ -755,40 +672,6 @@ watch(() => currentHoverIndex, (newVal) => {
   }
 }
 
-.placementarea {
-  height: 60px;
-  border: 1px dashed #409eff;
-  background-color: rgba(64, 158, 255, 0.04);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  transition: all 0.3s;
-
-  .drop-icon {
-    color: #409eff;
-    margin-bottom: 8px;
-
-    .el-icon {
-      font-size: 24px;
-      animation: bounce 1s infinite;
-    }
-  }
-
-  .drop-text {
-    font-size: 14px;
-    color: #409eff;
-    font-weight: 500;
-    margin-bottom: 4px;
-  }
-
-  .drop-desc {
-    font-size: 12px;
-    color: #909399;
-    opacity: 0.8;
-  }
-}
 
 @keyframes bounce {
   0%, 100% {
@@ -814,77 +697,7 @@ watch(() => currentHoverIndex, (newVal) => {
     border: 1px dashed #409eff;
   }
 
-  .component-tag {
-    position: absolute;
-    right: -80px;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: #fff;
-    padding: 4px 0;
-    width: 70px;
-    font-size: 12px;
-    color: #ffffff;
-    border: none;
-    border-radius: 2px;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: -4px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 0;
-      height: 0;
-      border-top: 4px solid transparent;
-      border-bottom: 4px solid transparent;
-      border-right: 4px solid #fff;
-    }
-
-    .delete-icon {
-      display: none;
-      cursor: pointer;
-      color: #ffffff;
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      border-radius: 2px;
-      justify-content: center;
-      align-items: center;
-      font-size: 16px;
-
-      &:hover {
-        color: #ffffff;
-      }
-    }
-
-    &:hover {
-      .delete-icon {
-        display: inline-flex;
-      }
-
-      &::before {
-        border-right-color: rgba(0, 0, 0, 0.6);
-      }
-    }
-
-    span {
-      font-size: 12px;
-      color: #555;
-      width: 70px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: center;
-      white-space: nowrap;
-    }
-  }
+  
 }
 
 .image-config-item {
