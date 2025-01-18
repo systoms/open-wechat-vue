@@ -29,10 +29,10 @@ import {ref, computed} from 'vue'
 import {
   Grid, SetUp, Picture
 } from '@element-plus/icons-vue'
-import SwipeConfig from '../components/swipe/Config.vue'
-import SwipeComponent from '../components/swipe/Component.vue'
-import IconConfig from '../components/icon/Config.vue'
-import IconComponent from '../components/icon/Component.vue'
+import SwipeConfig from '@/components/drag/components/basic/config/Swipe.vue'
+import SwipeComponent from '@/components/drag/components/basic/Swipe.vue'
+import IconConfig from '@/components/drag/components/basic/config/Icon.vue'
+import IconComponent from '@/components/drag/components/basic/Icon.vue'
 
 const emit = defineEmits(['dragstart'])
 const activeCollapse = ref(['basic'])
@@ -137,36 +137,9 @@ const components = componentList.reduce((acc, category) => {
   return acc.concat(category.components);
 }, []);
 
-// 基础组件列表
-const basicComponents = [
-  {
-    type: 'vant-swipe',
-    label: '轮播图',
-    description: '用于循环播放图片、视频等内容',
-    icon: Picture,
-    component: SwipeComponent,
-    configComponent: SwipeConfig,
-    getDefaultProps: createDefaultSwipeProps
-  },
-  {
-    type: 'vant-icon',
-    label: 'icon',
-    description: '用于展示业务快捷入口',
-    icon: Picture,
-    component: IconComponent,
-    configComponent: IconConfig,
-    getDefaultProps: createDefaultIconProps
-  }
-]
-
-// 业务组件列表
-const businessComponents = []
-
 // 暴露组件数据和方法
 defineExpose({
   components,
-  basicComponents,
-  businessComponents
 })
 </script>
 
