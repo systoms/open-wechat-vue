@@ -25,10 +25,8 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue'
-import {
-  Grid, SetUp, Picture
-} from '@element-plus/icons-vue'
+import {ref, defineAsyncComponent, markRaw, shallowRef} from 'vue'
+import {Picture} from '@element-plus/icons-vue'
 import SwipeConfig from '@/components/drag/components/basic/config/Swipe.vue'
 import SwipeComponent from '@/components/drag/components/basic/Swipe.vue'
 import IconConfig from '@/components/drag/components/basic/config/Icon.vue'
@@ -36,6 +34,8 @@ import IconComponent from '@/components/drag/components/basic/Icon.vue'
 
 const emit = defineEmits(['dragstart'])
 const activeCollapse = ref(['basic'])
+const componentList = shallowRef([])
+const components = shallowRef([])
 
 // 创建新的默认值对象的函数
 const createDefaultSwipeProps = () => ({
@@ -99,47 +99,93 @@ const handleDragStart = (e, component) => {
   emit('dragstart', e, {...component, defaultProps})
 }
 
-const componentList = [
-  {
-    label: '基础组件',
-    name: 'basic',
-    icon: Grid,
-    components: [
-      {
-        type: 'vant-swipe',
-        label: '轮播图',
-        description: '用于循环播放图片、视频等内容',
-        icon: Picture,
-        component: SwipeComponent,
-        configComponent: SwipeConfig,
-        getDefaultProps: createDefaultSwipeProps
-      },
-      {
-        type: 'vant-icon',
-        label: 'icon',
-        description: '用于展示业务快捷入口',
-        icon: Picture,
-        component: IconComponent,
-        configComponent: IconConfig,
-        getDefaultProps: createDefaultIconProps
-      }
-    ]
-  },
-  {
-    label: '业务组件',
-    name: 'business',
-    icon: SetUp,
-    components: [],
-  }
-]
+// const componentList = [
+// {
+//   label: '基础组件',
+//   name: 'basic',
+//   components: [
+//     {
+//       type: 'vant-swipe',
+//       label: '轮播图',
+//       description: '用于循环播放图片、视频等内容',
+//       icon: Picture,
+//       component: SwipeComponent,
+//       configComponent: SwipeConfig,
+//       getDefaultProps: createDefaultSwipeProps
+//     },
+//     {
+//       type: 'vant-icon',
+//       label: 'icon',
+//       description: '用于展示业务快捷入口',
+//       icon: Picture,
+//       component: IconComponent,
+//       configComponent: IconConfig,
+//       getDefaultProps: createDefaultIconProps
+//     }
+//   ]
+// },
+// {
+//   label: '业务组件',
+//   name: 'business',
+//   components: [],
+// }
+// ]
 
-const components = componentList.reduce((acc, category) => {
+const fileBasicPath = '../components/';
+const componentGroupFiles = import.meta.glob('../components/*/config.json', { eager: true });
+const componentGroupNames = Object.keys(componentGroupFiles);
+
+const componentFiles = import.meta.glob('../components/*/*.vue', { eager: true });
+const componentNames = Object.keys(componentFiles);
+
+const componentConfigFiles = import.meta.glob('../components/*/config/*.vue', { eager: true });
+const componentConfigNames = Object.keys(componentConfigFiles);
+
+componentGroupNames.forEach((filePath) => {
+  const componentConfig = componentGroupFiles[filePath];
+  const folderName = filePath.split('/').slice(-2, -1)[0];
+  const componentName = componentConfig.default?.name || componentConfig.name;
+
+  const componentGroupData = {
+    label: componentName,
+    name: folderName,
+    components: [],
+  };
+
+  for (const componentFilePath of componentNames) {
+    const folderName2 = componentFilePath.split('/').slice(-2, -1)[0];
+    if (folderName === folderName2) {
+      const componentName = componentFilePath.split('/').pop().replace('.vue', '');
+      const configPath = `${fileBasicPath}${folderName}/config/${componentName}.vue`;
+      const newPath = componentConfigNames.find(c => c === configPath);
+
+      const module = componentFiles[componentFilePath];
+      const componentConfig = module.default.__config || {};
+
+      componentGroupData.components.push(markRaw({
+        type: componentConfig.type || `vant-${componentName.toLowerCase()}`,
+        label: componentConfig.label || componentName,
+        description: componentConfig.description || '',
+        icon: componentConfig.icon || Picture,
+        component: module.default,
+        configComponent: componentConfigFiles[newPath].default,
+        getDefaultProps: componentConfig.getDefaultProps || createDefaultSwipeProps
+      }));
+    }
+  }
+
+  componentList.value.push(markRaw(componentGroupData));
+});
+
+components.value = componentList.value.reduce((acc, category) => {
   return acc.concat(category.components);
 }, []);
 
+// console.log(components.value)
+
 // 暴露组件数据和方法
 defineExpose({
-  components,
+  components: shallowRef(components.value)
 })
 </script>
 
