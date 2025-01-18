@@ -120,7 +120,7 @@ import {
   Delete
 } from '@element-plus/icons-vue'
 import PreviewDialog from '@/components/PreviewDialog.vue'
-import ComponentsPanel from '@/components/drag/ComponentsPanel.vue'
+import ComponentsPanel from '@/components/drag/config/ComponentPanel.vue'
 import PageConfig from '@/components/drag/config/PageConfig.vue'
 import ComponentManage from '@/components/drag/config/ComponentManage.vue'
 

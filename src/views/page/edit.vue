@@ -49,7 +49,8 @@
       </section>
 
       <!-- 操作按钮 - 浮动样式 -->
-      <ActionPanel @page-config="handlePageConfig" @component-manage="handleComponentManage" @preview="handlePreview" @save="handleSave" :saving="saving"></ActionPanel>
+      <ActionPanel @page-config="handlePageConfig" @component-manage="handleComponentManage" @preview="handlePreview"
+                   @save="handleSave" :saving="saving"></ActionPanel>
 
       <!-- 右侧配置面板 -->
       <div class="config-panel">
@@ -80,19 +81,17 @@ import {computed, markRaw, onMounted, ref, shallowRef, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElLoading, ElMessage} from 'element-plus'
 import {readPage, savePage, updatePage} from '@/api/page'
-import {ArrowLeft, Check, Delete, Grid, Setting, View} from '@element-plus/icons-vue'
+import {ArrowLeft} from '@element-plus/icons-vue'
 import PreviewDialog from '@/components/PreviewDialog.vue'
-import ComponentsPanel from '@/components/drag/ComponentsPanel.vue'
+import ComponentsPanel from '@/components/drag/config/ComponentPanel.vue'
 import PageConfig from '@/components/drag/config/PageConfig.vue'
 import ComponentManage from '@/components/drag/config/ComponentManage.vue'
-import ActionPanel from './ActionPanel.vue'
-import PlacementArea from './PlacementArea.vue'
-import ComponentTag from './ComponentTag.vue'
+import ActionPanel from '@/components/drag/module/ActionPanel.vue'
+import PlacementArea from '@/components/drag/module/PlacementArea.vue'
+import ComponentTag from '@/components/drag/module/ComponentTag.vue'
 
 
 const componentsPanelRef = shallowRef(null)
-const basicComponents = shallowRef([])
-const businessComponents = shallowRef([])
 
 const route = useRoute()
 const router = useRouter()
@@ -160,13 +159,14 @@ const initPageData = async () => {
         // 查找组件定义并创建组件实例
         // 过滤掉无效组件
         canvasItems.value = data.components.map(item => {
-          const componentDef = [...basicComponents.value, ...businessComponents.value]
-              .find(c => c.type === item.type)
+          const componentDef = componentsPanelRef.value.components.find(c => c.type === item.type)
 
           if (componentDef) {
             return {
               id: Date.now() + Math.random(), // 生成唯一ID
               type: item.type,
+              icon: componentDef.icon,
+              label: componentDef.label,
               component: markRaw(componentDef.component),
               props: {...item.props}
             }
@@ -257,11 +257,12 @@ const handlePreviewDragOver = (e) => {
 const handleDrop = (e) => {
   e.preventDefault()
   const type = e.dataTransfer.getData('componentType')
-  const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
+  const component = componentsPanelRef.value.components.find(c => c.type === type)
 
   if (component && dropAreaIndex.value !== -1) {
     const item = {
       id: Date.now(),
+      icon: component.icon,
       type: component.type,
       label: component.label,
       component: markRaw(component.component),
@@ -299,7 +300,7 @@ const getPanelTitle = computed(() => {
   if (isPageConfig.value) return '页面设置'
   if (isComponentManage.value) return '组件管理'
   if (currentItem.value) {
-    const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === currentItem.value.type)
+    const component = componentsPanelRef.value.components.find(c => c.type === currentItem.value.type)
     return component ? `${component.label}组件配置` : '组件配置'
   }
   return '属性配置'
@@ -336,16 +337,10 @@ const removeItem = (index) => {
   canvasItems.value = canvasItems.value.filter((_, i) => i !== index)
 }
 
-// 获取组件标签名称
-const getComponentLabel = (type) => {
-  const component = [...basicComponents.value, ...businessComponents.value].find(c => c.type === type)
-  return component ? component.label : type
-}
-
 // 获取当前组件的配置信息
 const currentComponent = computed(() => {
   if (!currentItem.value) return null
-  return [...basicComponents.value, ...businessComponents.value].find(
+  return componentsPanelRef.value.components.find(
       c => c.type === currentItem.value.type
   )
 })
@@ -443,16 +438,6 @@ const handleSave = async () => {
 // 在组件挂载后初始化数据
 onMounted(() => {
   initPageData()
-  if (componentsPanelRef.value) {
-    basicComponents.value = componentsPanelRef.value.basicComponents.map(comp => ({
-      ...comp,
-      component: markRaw(comp.component)
-    }))
-    businessComponents.value = componentsPanelRef.value.businessComponents.map(comp => ({
-      ...comp,
-      component: markRaw(comp.component)
-    }))
-  }
 })
 
 // 添加 watch 来监控 currentHoverIndex 的变化
@@ -594,7 +579,6 @@ watch(() => currentHoverIndex, (newVal) => {
 }
 
 
-
 .component-list {
   .tip-text {
     font-size: 12px;
@@ -697,7 +681,7 @@ watch(() => currentHoverIndex, (newVal) => {
     border: 1px dashed #409eff;
   }
 
-  
+
 }
 
 .image-config-item {

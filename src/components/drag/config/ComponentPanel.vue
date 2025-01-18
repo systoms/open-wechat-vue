@@ -2,31 +2,20 @@
   <div class="components-panel">
     <div class="panel-header">
       <el-collapse v-model="activeCollapse">
-        <el-collapse-item title="基础组件" name="basic">
+        <el-collapse-item v-for="(componentGroup,componentGroupIndex) in componentList" v-bind:key="componentGroupIndex"
+                          :title="componentGroup.label" :name="componentGroup.name">
           <div class="components-grid">
             <div class="component-item"
-                 v-for="item in basicComponents"
-                 :key="item.type"
+                 v-for="component in componentGroup.components"
+                 :key="component.type"
                  draggable="true"
-                 @dragstart="handleDragStart($event, item)">
+                 @dragstart="handleDragStart($event, component)">
               <div class="item-icon">
-                <el-icon><component :is="item.icon" /></el-icon>
+                <el-icon>
+                  <component :is="component.icon"/>
+                </el-icon>
               </div>
-              <div class="item-label">{{ item.label }}</div>
-            </div>
-          </div>
-        </el-collapse-item>
-        <el-collapse-item title="业务组件" name="business">
-          <div class="components-grid">
-            <div class="component-item"
-                 v-for="item in businessComponents"
-                 :key="item.type"
-                 draggable="true"
-                 @dragstart="handleDragStart($event, item)">
-              <div class="item-icon">
-                <el-icon><component :is="item.icon" /></el-icon>
-              </div>
-              <div class="item-label">{{ item.label }}</div>
+              <div class="item-label">{{ component.label }}</div>
             </div>
           </div>
         </el-collapse-item>
@@ -36,33 +25,30 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import {ref, computed} from 'vue'
 import {
-  Search, Grid, SetUp, Picture, Document,
-  List, Edit, View, Check, Setting, Delete
+  Grid, SetUp, Picture
 } from '@element-plus/icons-vue'
-import { Swipe as VantSwipe, SwipeItem as VanSwipeItem } from 'vant'
-import SwipeConfig from './components/swipe/Config.vue'
-import SwipeComponent from './components/swipe/Component.vue'
-import IconConfig from './components/icon/Config.vue'
-import IconComponent from './components/icon/Component.vue'
+import SwipeConfig from '../components/swipe/Config.vue'
+import SwipeComponent from '../components/swipe/Component.vue'
+import IconConfig from '../components/icon/Config.vue'
+import IconComponent from '../components/icon/Component.vue'
 
 const emit = defineEmits(['dragstart'])
 const activeCollapse = ref(['basic'])
-const searchText = ref('')
 
 // 创建新的默认值对象的函数
 const createDefaultSwipeProps = () => ({
   autoplay: 3000,
   images: [
-    { url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-1.jpeg', alt: '图片1' },
-    { url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-2.jpeg', alt: '图片2' },
-    { url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-3.jpeg', alt: '图片3' },
+    {url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-1.jpeg', alt: '图片1'},
+    {url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-2.jpeg', alt: '图片2'},
+    {url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-3.jpeg', alt: '图片3'},
   ]
 })
 const createDefaultIconProps = () => ({
   icons: [
-  {
+    {
       name: 'kfc',
       label: '肯德基',
       url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/kfc_style1.png'
@@ -110,8 +96,46 @@ const handleDragStart = (e, component) => {
   e.dataTransfer.setData('componentType', component.type)
   e.dataTransfer.effectAllowed = 'move'
   const defaultProps = component.getDefaultProps ? component.getDefaultProps() : {}
-  emit('dragstart', e, { ...component, defaultProps })
+  emit('dragstart', e, {...component, defaultProps})
 }
+
+const componentList = [
+  {
+    label: '基础组件',
+    name: 'basic',
+    icon: Grid,
+    components: [
+      {
+        type: 'vant-swipe',
+        label: '轮播图',
+        description: '用于循环播放图片、视频等内容',
+        icon: Picture,
+        component: SwipeComponent,
+        configComponent: SwipeConfig,
+        getDefaultProps: createDefaultSwipeProps
+      },
+      {
+        type: 'vant-icon',
+        label: 'icon',
+        description: '用于展示业务快捷入口',
+        icon: Picture,
+        component: IconComponent,
+        configComponent: IconConfig,
+        getDefaultProps: createDefaultIconProps
+      }
+    ]
+  },
+  {
+    label: '业务组件',
+    name: 'business',
+    icon: SetUp,
+    components: [],
+  }
+]
+
+const components = componentList.reduce((acc, category) => {
+  return acc.concat(category.components);
+}, []);
 
 // 基础组件列表
 const basicComponents = [
@@ -138,25 +162,9 @@ const basicComponents = [
 // 业务组件列表
 const businessComponents = []
 
-// 搜索过滤
-const filteredBasicComponents = computed(() => {
-  if (!searchText.value) return basicComponents
-  return basicComponents.filter(item => 
-    item.label.toLowerCase().includes(searchText.value.toLowerCase()) ||
-    item.description?.toLowerCase().includes(searchText.value.toLowerCase())
-  )
-})
-
-const filteredBusinessComponents = computed(() => {
-  if (!searchText.value) return businessComponents
-  return businessComponents.filter(item => 
-    item.label.toLowerCase().includes(searchText.value.toLowerCase()) ||
-    item.description?.toLowerCase().includes(searchText.value.toLowerCase())
-  )
-})
-
 // 暴露组件数据和方法
 defineExpose({
+  components,
   basicComponents,
   businessComponents
 })
