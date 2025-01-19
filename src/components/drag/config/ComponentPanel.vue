@@ -162,6 +162,7 @@ componentGroupNames.forEach((filePath) => {
       const module = componentFiles[componentFilePath];
       const componentConfig = module.default.__config || {};
 
+      console.log(componentConfigFiles[newPath].default);
       componentGroupData.components.push(markRaw({
         type: componentConfig.type || `vant-${componentName.toLowerCase()}`,
         label: componentConfig.label || componentName,

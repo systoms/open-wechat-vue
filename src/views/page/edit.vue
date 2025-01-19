@@ -22,11 +22,10 @@
         <div class="panel-content">
           <PageConfig v-if="isPageConfig" v-model="pageConfig"></PageConfig>
           <ComponentManage v-else-if="isComponentManage" v-model="canvasItems"></ComponentManage>
-          <component
-              v-else-if="currentConfigComponent"
+          <component v-if="currentItem"
               :is="currentConfigComponent"
-              v-model="currentConfigData"
-              @update:modelValue="handleConfigUpdate"
+              :key="currentItem.id"
+              v-model="currentItem.props"
           />
           <el-empty v-else description="请选择组件"/>
         </div>
@@ -219,44 +218,37 @@ const currentConfigComponent = computed(() => {
 })
 
 // 获取当前配置数据
-const currentConfigData = computed(() => {
-  if (isPageConfig.value) {
-    return pageConfig.value
-  }
-  if (isComponentManage.value) {
-    return canvasItems.value
-  }
-  if (currentItem.value) {
-    return currentItem.value.props
-  }
-  return null
-})
-
-// 处理配置更新
-const handleConfigUpdate = (val) => {
-  if (isPageConfig.value) {
-    pageConfig.value = val
-  } else if (isComponentManage.value) {
-    canvasItems.value = val.map(item => ({
-      ...item,
-      component: markRaw(item.component)
-    }))
-  } else if (currentItem.value) {
-    // 找到当前项的索引
-    const index = canvasItems.value.findIndex(item => item.id === currentItem.value.id)
-    if (index !== -1) {
-      // 创建新的数组并更新指定项
-      const newItems = [...canvasItems.value]
-      newItems[index] = {
-        ...newItems[index],
-        props: val
+const currentConfigData = computed({
+  get: () => {
+    if (currentItem.value) {
+      console.log('currentItem', currentItem.value)
+      return currentItem.value.props
+    }
+    console.log('currentItem', null)
+    return null
+  },
+  set: (val) => {
+    if (isPageConfig.value) {
+      pageConfig.value = val
+    } else if (isComponentManage.value) {
+      canvasItems.value = val
+    } else if (currentItem.value) {
+      // 找到当前项的索引
+      const index = canvasItems.value.findIndex(item => item.id === currentItem.value.id)
+      if (index !== -1) {
+        // 创建新的数组并更新指定项
+        const newItems = [...canvasItems.value]
+        newItems[index] = {
+          ...newItems[index],
+          props: val
+        }
+        console.log('newItems', newItems[index])
+        canvasItems.value = newItems
+        currentItem.value = newItems[index]
       }
-      canvasItems.value = newItems
-      // 更新当前选中项
-      currentItem.value = newItems[index]
     }
   }
-}
+})
 
 // 处理保存
 const handleSave = async () => {
