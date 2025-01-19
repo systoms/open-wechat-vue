@@ -52,12 +52,17 @@ import PageConfig from '@/components/drag/config/PageConfig.vue'
 import ComponentManage from '@/components/drag/config/ComponentManage.vue'
 import ActionPanel from '@/components/drag/module/ActionPanel.vue'
 import ComponentCanvas from '@/components/drag/config/ComponentCanvas.vue'
+import {useTabStore} from '@/store/tab'
 
+const tabStore = useTabStore()
 
 const componentsPanelRef = shallowRef(null)
 
 const route = useRoute()
 const router = useRouter()
+
+// 新增的 currentConfigData，使用 ref
+const currentConfigData = ref(null)
 
 // 获取路由参数
 const pageId = route.query.id
@@ -194,7 +199,26 @@ const handleComponentSelect = (item) => {
   isPageConfig.value = false
   isComponentManage.value = false
   currentItem.value = item
+  currentConfigData.value = {...item.props}
 }
+// 更新 canvasItems 中的组件数据
+const updateConfigData = (newConfigData) => {
+  if (currentItem.value) {
+    const index = canvasItems.value.findIndex(item => item.id === currentItem.value.id)
+    if (index !== -1) {
+      const newItems = [...canvasItems.value]
+      newItems[index] = {...newItems[index], props: newConfigData}
+      canvasItems.value = newItems
+      currentItem.value = newItems[index]
+    }
+  }
+}
+watch(currentConfigData, (newConfigData) => {
+  if (newConfigData) {
+    updateConfigData(newConfigData) // 更新 canvasItems
+  }
+})
+
 // 修改页面配置处理方法
 const handlePageConfig = () => {
   isPageConfig.value = true
@@ -218,35 +242,7 @@ const currentConfigComponent = computed(() => {
   return null
 })
 
-// 获取当前配置数据
-const currentConfigData = computed({
-  get: () => {
-    if (currentItem.value) {
-      console.log('currentItem', currentItem.value)
-      return currentItem.value.props
-    }
-    console.log('currentItem', null)
-    return null
-  },
-  set: (val) => {
-    console.log(val)
-    if (currentItem.value) {
-      // 找到当前项的索引
-      const index = canvasItems.value.findIndex(item => item.id === currentItem.value.id)
-      if (index !== -1) {
-        // 创建新的数组并更新指定项
-        const newItems = [...canvasItems.value]
-        newItems[index] = {
-          ...newItems[index],
-          props: val
-        }
-        console.log('newItems', newItems[index])
-        canvasItems.value = newItems
-        currentItem.value = newItems[index]
-      }
-    }
-  }
-})
+
 // 处理保存
 const handleSave = async () => {
   if (saving.value) return
@@ -269,8 +265,10 @@ const handleSave = async () => {
 
     ElMessage.success('保存成功')
 
-    // 保存成功后返回列表页
-    router.push('/page/index')
+    // 关闭当前标签页
+    tabStore.removeTab(router.currentRoute.value.path)
+    // 先跳转到列表页
+    await router.push('/page/index')
 
   } catch (error) {
     console.error('保存失败:', error)

@@ -5,7 +5,7 @@
       style="max-width: 600px"
   >
     <el-upload
-        v-model:file-list="icons"
+        v-model:file-list="modelValue.icons"
         action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
         list-type="picture-card"
         :on-preview="handlePictureCardPreview"
@@ -31,28 +31,6 @@ const props = defineProps({
     })
   },
 })
-
-// console.log('props',props)
-const icons = ref(props.modelValue.icons);
-
-const emit = defineEmits(['update:modelValue'])
-// 监听 icons 变化，触发 update:modelValue 事件更新父组件的 modelValue
-watch(icons, (newIcons) => {
-  console.log('New icons:', newIcons);
-  emit('update:modelValue', { ...props.modelValue, icons: newIcons });
-});
-
-// 创建本地的图标列表
-// const icons = ref(props.modelValue.icons)
-// console.log(icons)
-
-// 只监听外部数据变化，不触发 emit
-watch(() => props.modelValue?.icons, (newVal) => {
-  // console.log(newVal);
-  // if (Array.isArray(newVal) && JSON.stringify(newVal) !== JSON.stringify(iconList.value)) {
-  //   iconList.value = [...newVal]
-  // }
-}, { immediate: true })
 
 const handleRemove = (uploadFile, uploadFiles) => {
   // iconList.value = uploadFiles
