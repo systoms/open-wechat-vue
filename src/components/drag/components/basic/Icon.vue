@@ -1,7 +1,7 @@
 <template>
   <div class="brand-icons">
     <div class="icon-grid">
-      <div v-for="icon in icons"
+      <div v-for="icon in modelValue.icons"
            :key="icon.name"
            class="icon-item">
         <div class="icon-wrapper">
@@ -17,63 +17,69 @@
 import {Picture} from "@element-plus/icons-vue";
 
 const props = defineProps({
-  icons: {
-    type: Array,
-    default: () => ([
-      {
-        name: 'kfc',
-        label: '肯德基',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/kfc_style1.png'
-      },
-      {
-        name: 'mcdonalds',
-        label: '麦当劳',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/mcdonalds_style1.png'
-      },
-      {
-        name: 'starbucks',
-        label: '星巴克',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/starbucks_style1.png'
-      },
-      {
-        name: 'ruixing',
-        label: '瑞幸',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/luckinCoffee_style1.png'
-      },
-      {
-        name: 'nayuki',
-        label: '奈雪',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/naixue_style1.png'
-      },
-      {
-        name: 'heytea',
-        label: '喜茶',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/heytear_style1.png'
-      },
-      {
-        name: 'movie',
-        label: '电影',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/movie_style1.png'
-      },
-      {
-        name: 'share',
-        label: '分享',
-        url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/share_style1.png'
-      }
-    ])
-  }
-});
-
-defineExpose({
-  __config: {
-    type: 'vant-icon',
-    label: 'icon',
-    description: '用于展示业务快捷入口',
-    icon: Picture,
-    getDefaultProps: {
-      icons: props.icons
-    }
-  }
+  modelValue: {
+    type: Object,
+    default: () => ({
+      icons: [
+        {
+          name: 'kfc',
+          label: '肯德基',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/kfc_style1.png'
+        },
+        {
+          name: 'mcdonalds',
+          label: '麦当劳',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/mcdonalds_style1.png'
+        },
+        {
+          name: 'starbucks',
+          label: '星巴克',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/starbucks_style1.png'
+        },
+        {
+          name: 'ruixing',
+          label: '瑞幸',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/luckinCoffee_style1.png'
+        },
+        {
+          name: 'nayuki',
+          label: '奈雪',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/naixue_style1.png'
+        },
+        {
+          name: 'heytea',
+          label: '喜茶',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/heytear_style1.png'
+        },
+        {
+          name: 'movie',
+          label: '电影',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/movie_style1.png'
+        },
+        {
+          name: 'share',
+          label: '分享',
+          url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/share_style1.png'
+        }
+      ]
+    })
+  },
+  type: {
+    type: String,
+    default: () => "vant-icon"
+  },
+  label: {
+    type: String,
+    default: () => "icon"
+  },
+  description: {
+    type: String,
+    default: () => "用于展示业务快捷入口"
+  },
+  icon: {
+    type: Object,
+    default: () => Picture
+  },
 });
 </script>
 

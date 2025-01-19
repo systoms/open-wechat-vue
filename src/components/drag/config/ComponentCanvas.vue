@@ -19,14 +19,14 @@
                @dragend.prevent="handleDragEnd"
                ref="canvasRef">
         <section class="canvas-content">
-          <template v-for="(item, index) in canvasItems" :key="item.id">
+          <template v-for="(item, index) in canvasItems" v-bind:key="item.id">
             <!-- 在每个组件前显示放置区域 -->
             <PlacementArea v-if="showDropArea && dropAreaIndex === index"></PlacementArea>
 
             <div class="canvas-item"
                  :class="{ active: currentItem?.id === item.id }"
                  @click="selectItem(item)">
-              <component :is="item.component" v-bind="item.props"/>
+              <component :is="item.component" v-model="item.props"/>
               <ComponentTag :index="index" :item="item" @remove="removeItem"></ComponentTag>
             </div>
           </template>
@@ -126,7 +126,7 @@ const handleDrop = (e) => {
       type: component.type,
       label: component.label,
       component: markRaw(component.component),
-      props: component.getDefaultProps ? component.getDefaultProps() : {...component.defaultProps}
+      props: component.getDefaultProps
     }
 
     emit('update:canvasItems', [
@@ -134,9 +134,7 @@ const handleDrop = (e) => {
       item,
       ...props.canvasItems.slice(dropAreaIndex.value)
     ]);
-    emit('update:currentItem', item);
-
-    emit('handleComponentSelect', []);
+    emit('handleComponentSelect', item);
   }
 
   resetDragState()
@@ -150,16 +148,11 @@ const handleDragEnd = () => {
 
 // 修改选择组件方法
 const selectItem = (item) => {
-  emit('update:currentItem', props.canvasItems.find(i => i.id === item.id));
-  emit('handleComponentSelect', []);
+  emit('handleComponentSelect', props.canvasItems.find(i => i.id === item.id));
 }
 
 // 修改移除组件方法
 const removeItem = (index) => {
-  // 如果要删除的是当前选中的组件，清除选中状态
-  if (props.currentItem === props.canvasItems[index]) {
-    emit('update:currentItem', null);
-  }
   // 使用 filter 创建新数组
   emit('update:canvasItems', props.canvasItems.filter((_, i) => i !== index));
 }

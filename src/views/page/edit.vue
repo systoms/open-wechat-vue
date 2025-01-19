@@ -8,7 +8,7 @@
       />
 
       <!-- 中间预览区域 -->
-      <ComponentCanvas v-model:isDragging="isDragging" :pageConfig="pageConfig" :components="components"
+      <ComponentCanvas v-model:isDragging="isDragging" v-model:pageConfig="pageConfig" :components="components"
                        v-model:canvasItems="canvasItems" v-model:currentItem="currentItem"
                        @handleComponentSelect="handleComponentSelect"></ComponentCanvas>
 
@@ -23,9 +23,9 @@
           <PageConfig v-if="isPageConfig" v-model="pageConfig"></PageConfig>
           <ComponentManage v-else-if="isComponentManage" v-model="canvasItems"></ComponentManage>
           <component v-if="currentItem"
-              :is="currentConfigComponent"
-              :key="currentItem.id"
-              v-model="currentItem.props"
+                     :is="currentConfigComponent"
+                     :key="currentItem.id"
+                     v-model="currentConfigData"
           />
           <el-empty v-else description="请选择组件"/>
         </div>
@@ -190,9 +190,10 @@ const handleComponentManage = () => {
   isPageConfig.value = false
   currentItem.value = null
 }
-const handleComponentSelect = () => {
+const handleComponentSelect = (item) => {
   isPageConfig.value = false
   isComponentManage.value = false
+  currentItem.value = item
 }
 // 修改页面配置处理方法
 const handlePageConfig = () => {
@@ -228,11 +229,8 @@ const currentConfigData = computed({
     return null
   },
   set: (val) => {
-    if (isPageConfig.value) {
-      pageConfig.value = val
-    } else if (isComponentManage.value) {
-      canvasItems.value = val
-    } else if (currentItem.value) {
+    console.log(val)
+    if (currentItem.value) {
       // 找到当前项的索引
       const index = canvasItems.value.findIndex(item => item.id === currentItem.value.id)
       if (index !== -1) {
@@ -249,7 +247,6 @@ const currentConfigData = computed({
     }
   }
 })
-
 // 处理保存
 const handleSave = async () => {
   if (saving.value) return

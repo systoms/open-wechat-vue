@@ -25,77 +25,18 @@
 </template>
 
 <script setup>
-import {ref, defineAsyncComponent, markRaw, shallowRef} from 'vue'
-import {Picture} from '@element-plus/icons-vue'
-import SwipeConfig from '@/components/drag/components/basic/config/Swipe.vue'
-import SwipeComponent from '@/components/drag/components/basic/Swipe.vue'
-import IconConfig from '@/components/drag/components/basic/config/Icon.vue'
-import IconComponent from '@/components/drag/components/basic/Icon.vue'
+import {ref, markRaw, shallowRef} from 'vue'
 
 const emit = defineEmits(['dragstart'])
 const activeCollapse = ref(['basic'])
 const componentList = shallowRef([])
 const components = shallowRef([])
 
-// 创建新的默认值对象的函数
-const createDefaultSwipeProps = () => ({
-  autoplay: 3000,
-  images: [
-    {url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-1.jpeg', alt: '图片1'},
-    {url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-2.jpeg', alt: '图片2'},
-    {url: 'https://fastly.jsdelivr.net/npm/@vant/assets/apple-3.jpeg', alt: '图片3'},
-  ]
-})
-const createDefaultIconProps = () => ({
-  icons: [
-    {
-      name: 'kfc',
-      label: '肯德基',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/kfc_style1.png'
-    },
-    {
-      name: 'mcdonalds',
-      label: '麦当劳',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/mcdonalds_style1.png'
-    },
-    {
-      name: 'starbucks',
-      label: '星巴克',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/starbucks_style1.png'
-    },
-    {
-      name: 'ruixing',
-      label: '瑞幸',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/luckinCoffee_style1.png'
-    },
-    {
-      name: 'nayuki',
-      label: '奈雪',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/naixue_style1.png'
-    },
-    {
-      name: 'heytea',
-      label: '喜茶',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/heytear_style1.png'
-    },
-    {
-      name: 'movie',
-      label: '电影',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/movie_style1.png'
-    },
-    {
-      name: 'share',
-      label: '分享',
-      url: 'https://img.yunzhanxinxi.com/static/home/icon/topdining/share_style1.png'
-    }
-  ]
-})
-
 // 处理拖拽开始
 const handleDragStart = (e, component) => {
   e.dataTransfer.setData('componentType', component.type)
   e.dataTransfer.effectAllowed = 'move'
-  const defaultProps = component.getDefaultProps ? component.getDefaultProps() : {}
+  const defaultProps = component.getDefaultProps
   emit('dragstart', e, {...component, defaultProps})
 }
 
@@ -132,13 +73,13 @@ const handleDragStart = (e, component) => {
 // ]
 
 const fileBasicPath = '../components/';
-const componentGroupFiles = import.meta.glob('../components/*/config.json', { eager: true });
+const componentGroupFiles = import.meta.glob('../components/*/config.json', {eager: true});
 const componentGroupNames = Object.keys(componentGroupFiles);
 
-const componentFiles = import.meta.glob('../components/*/*.vue', { eager: true });
+const componentFiles = import.meta.glob('../components/*/*.vue', {eager: true});
 const componentNames = Object.keys(componentFiles);
 
-const componentConfigFiles = import.meta.glob('../components/*/config/*.vue', { eager: true });
+const componentConfigFiles = import.meta.glob('../components/*/config/*.vue', {eager: true});
 const componentConfigNames = Object.keys(componentConfigFiles);
 
 componentGroupNames.forEach((filePath) => {
@@ -160,17 +101,14 @@ componentGroupNames.forEach((filePath) => {
       const newPath = componentConfigNames.find(c => c === configPath);
 
       const module = componentFiles[componentFilePath];
-      const componentConfig = module.default.__config || {};
-
-      console.log(componentConfigFiles[newPath].default);
       componentGroupData.components.push(markRaw({
-        type: componentConfig.type || `vant-${componentName.toLowerCase()}`,
-        label: componentConfig.label || componentName,
-        description: componentConfig.description || '',
-        icon: componentConfig.icon || Picture,
-        component: module.default,
-        configComponent: componentConfigFiles[newPath].default,
-        getDefaultProps: componentConfig.getDefaultProps || createDefaultSwipeProps
+        type: module.default.props.type.default(),
+        label: module.default.props.label.default(),
+        description: module.default.props.description.default(),
+        icon: module.default.props.icon.default(),
+        component: markRaw(module.default),
+        configComponent: markRaw(componentConfigFiles[newPath].default),
+        getDefaultProps: module.default.props.modelValue.default()
       }));
     }
   }
