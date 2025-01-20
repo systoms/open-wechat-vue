@@ -299,6 +299,7 @@ watch(() => currentHoverIndex, (newVal) => {
   background: #f5f7fa;
   overflow: visible;
   height: ~"calc(100vh - 141px)";
+  width: 100%;
 }
 
 .page-content {

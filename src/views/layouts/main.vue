@@ -1,44 +1,23 @@
 <template>
-  <el-container style="height: 100vh; overflow: hidden;">
-    <el-header style="height: 50px; line-height: 50px; background: #3c8dbc; color: white;">
-      <el-button
-          icon="el-icon-s-fold"
-          @click="toggleSidebar"
-          style="margin-right: 15px; color: white;"
-          plain
-      ></el-button>
-    </el-header>
-    <el-container>
-      <el-aside
-          ref="aside"
-          :style="{width:isCollapsed?'50px':'200px'}"
-          width="200px"
-      >
-        <el-scrollbar height="calc(100vh - 50px)">
-          <el-menu
-              :default-openeds="['1', '3']"
-              background-color="#222d32"
-              text-color="#b8c7ce"
-              active-text-color="#ffffff"
-          >
-            <el-menu-item index="1">
-              <i class="el-icon-menu"></i>
-              <span slot="title">Dashboard</span>
-            </el-menu-item>
-          </el-menu>
-        </el-scrollbar>
-      </el-aside>
+  <div class="common-layout">
+    <el-container class="is-vertical">
+      <Header :user-info="userInfo"></Header>
       <el-container>
-        <el-main style="padding: 15px; overflow: auto;">
-          <TabView/>
-          <router-view/>
-        </el-main>
-        <el-footer style="height: 50px; line-height: 50px; text-align: center; background: #f9fafc;">
+        <Aside></Aside>
+        <el-container class="is-vertical">
+          <el-main>
+            <div class="main-content">
+              <TabView class="tab-view"/>
+              <div class="view-container">
+                <router-view/>
+              </div>
+            </div>
+          </el-main>
           <Footer></Footer>
-        </el-footer>
+        </el-container>
       </el-container>
     </el-container>
-  </el-container>
+  </div>
 </template>
 
 <script setup>
@@ -50,11 +29,10 @@ import TabView from "@/components/TabView.vue";
 import {useMenuStore} from '@/store/system'
 import {getInfo} from '@/api/permission/user'
 
-import "@/assets/font-awesome/less/font-awesome.less";
-import "@/assets/bootstrap/less/bootstrap.less";
-import "@/assets/AdminLTE/AdminLTE.less";
-import "@/assets/AdminLTE/skins/skin-blue-light.less";
-
+// import "@/assets/font-awesome/less/font-awesome.less";
+// import "@/assets/bootstrap/less/bootstrap.less";
+// import "@/assets/AdminLTE/AdminLTE.less";
+// import "@/assets/AdminLTE/skins/skin-blue-light.less";
 
 const menuStore = useMenuStore()
 const company = ref({name: ''})
@@ -90,41 +68,56 @@ const userInfo = computed(() => ({
 }))
 </script>
 
-<style scoped>
-/* Header 样式 */
-.el-header {
-  background-color: #3c8dbc;
-  color: #ffffff;
-  font-size: 16px;
-  padding-left: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+<style scoped lang="less">
+.common-layout {
+  .el-header,
+  .el-footer,
+  .el-main,
+  .el-aside {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-/* Sidebar 样式 */
-.el-aside {
-  background-color: #222d32;
-  color: #b8c7ce;
-  transition: width 0.3s;
-}
+  .el-header,
+  .el-footer {
+    background-color: var(--el-color-primary-light-7);
+    color: var(--el-text-color-primary);
+    text-align: center;
+  }
 
-.el-menu {
-  border-right: none;
-}
+  .el-aside {
+    background-color: var(--el-color-primary-light-8);
+    color: var(--el-text-color-primary);
+    text-align: center;
+  }
 
-/* 主内容区样式 */
-.el-main {
-  background-color: #ecf0f5;
-  color: #333;
-  border-radius: 5px;
-  min-height: 100%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
-}
+  .el-main {
+    background-color: var(--el-color-primary-light-9);
+    color: var(--el-text-color-primary);
+    text-align: center;
+    height: calc(100vh - 100px);
+    padding: 0;
 
-/* Footer 样式 */
-.el-footer {
-  background-color: #f9fafc;
-  color: #333;
-  border-top: 1px solid #d2d6de;
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+
+      .tab-view {
+        flex: none;
+        width: 100%;
+        background-color: #fff;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .view-container {
+        flex: 1;
+        width: 100%;
+        overflow-y: auto;
+      }
+    }
+  }
 }
 </style>

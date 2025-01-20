@@ -174,7 +174,7 @@ const removeItem = (index) => {
     min-height: 760px;
     -webkit-box-shadow: 0 0 14px 0 rgba(0, 0, 0, .1);
     box-shadow: 0 0 14px 0 rgba(0, 0, 0, .1);
-    margin: 47px 0 0 0;
+    margin: 47px 0 47px 0;
     position: relative;
   }
 

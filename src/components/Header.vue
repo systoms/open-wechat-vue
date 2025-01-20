@@ -1,12 +1,134 @@
+<template>
+  <el-header class="main-header" height="50">
+    <!-- Logo -->
+    <a href="/" class="logo" :style="{width: layoutStore.sidebarCollapsed ? '50px' : '230px'}">
+      <!-- mini logo for sidebar mini 50x50 pixels -->
+      <span class="logo-mini" v-if="layoutStore.sidebarCollapsed">
+        <b>A</b>LT
+      </span>
+      <!-- logo for regular state and mobile devices -->
+      <span class="logo-lg" v-else>
+        <b>Admin</b>LTE
+      </span>
+    </a>
+
+    <!-- Header Navbar -->
+    <el-menu 
+      class="navbar"
+      mode="horizontal"
+      :ellipsis="false"
+    >
+      <!-- Sidebar toggle button -->
+      <el-menu-item index="0" class="sidebar-toggle" @click="handleSidebarToggle">
+        <el-icon><Fold /></el-icon>
+        <span class="sr-only">Toggle navigation</span>
+      </el-menu-item>
+
+      <div class="flex-grow" />
+
+      <!-- Navbar Right Menu -->
+      <div class="navbar-custom-menu">
+        <el-menu 
+          class="nav"
+          mode="horizontal"
+          :ellipsis="false"
+        >
+          <!-- Messages Menu -->
+          <el-sub-menu index="messages" class="messages-menu">
+            <template #title>
+              <el-badge :value="4" :max="99" class="item">
+                <el-icon :size="16"><Message /></el-icon>
+              </el-badge>
+            </template>
+            <el-menu-item index="messages-1">
+              <span>你有 4 条未读消息</span>
+            </el-menu-item>
+            <el-divider />
+            <el-menu-item index="messages-2">
+              <span>查看全部消息</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- Notifications Menu -->
+          <el-sub-menu index="notifications" class="notifications-menu">
+            <template #title>
+              <el-badge :value="10" :max="99" class="item">
+                <el-icon :size="16"><Bell /></el-icon>
+              </el-badge>
+            </template>
+            <el-menu-item index="notifications-1">
+              <span>你有 10 条通知</span>
+            </el-menu-item>
+            <el-divider />
+            <el-menu-item index="notifications-2">
+              <span>查看全部通知</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- Tasks Menu -->
+          <el-sub-menu index="tasks" class="tasks-menu">
+            <template #title>
+              <el-badge :value="9" :max="99" class="item">
+                <el-icon :size="16"><List /></el-icon>
+              </el-badge>
+            </template>
+            <el-menu-item index="tasks-1">
+              <span>你有 9 个任务</span>
+            </el-menu-item>
+            <el-divider />
+            <el-menu-item index="tasks-2">
+              <span>查看全部任务</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- User Account Menu -->
+          <el-sub-menu index="user" class="user-menu">
+            <template #title>
+              <el-avatar 
+                :size="25" 
+                :src="userInfo.user.avatar || '@/assets/img/user2-160x160.jpg'"
+              />
+              <span class="hidden-xs">{{ userInfo.user.fullname }}</span>
+            </template>
+            <el-menu-item index="user-1">
+              <el-icon><User /></el-icon>
+              <span>个人信息</span>
+            </el-menu-item>
+            <el-menu-item index="user-2">
+              <el-icon><Setting /></el-icon>
+              <span>设置</span>
+            </el-menu-item>
+            <el-divider />
+            <el-menu-item index="logout" @click="handleLogout">
+              <el-icon><SwitchButton /></el-icon>
+              <span>退出登录</span>
+            </el-menu-item>
+          </el-sub-menu>
+        </el-menu>
+      </div>
+    </el-menu>
+  </el-header>
+</template>
+
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTabStore } from '@/store/tab'
 import { useMenuStore } from '@/store/system'
+import { useLayoutStore } from '@/store/layout'
 import { ElMessageBox } from 'element-plus'
 import { logout } from '@/api/auth'
 import { removeToken } from '@/utils/auth'
-import { useLayoutStore } from '@/store/layout'
+import { 
+  Fold, 
+  Bell, 
+  User, 
+  Lock, 
+  SwitchButton,
+  Message,
+  List,
+  Setting
+} from '@element-plus/icons-vue'
 
 const props = defineProps({
   userInfo: {
@@ -14,7 +136,10 @@ const props = defineProps({
     required: true,
     default: () => ({
       company: { name: '' },
-      user: { fullname: '' }
+      user: { 
+        fullname: '',
+        avatar: ''
+      }
     })
   }
 })
@@ -24,32 +149,15 @@ const tabStore = useTabStore()
 const menuStore = useMenuStore()
 const layoutStore = useLayoutStore()
 
-// 管理下拉菜单状态
-const activeDropdown = ref(null)
-
-// 切换下拉菜单
-const toggleDropdown = (menu, event) => {
-  event.preventDefault()
-  activeDropdown.value = activeDropdown.value === menu ? null : menu
+// 处理侧边栏切换
+const handleSidebarToggle = () => {
+  layoutStore.toggleSidebar()
 }
 
-// 点击外部关闭菜单
-const handleClickOutside = (event) => {
-  if (!event.target.closest('.dropdown')) {
-    activeDropdown.value = null
-    document.body.classList.remove('sidebar-collapse')
-  }else{
-    document.body.classList.add('sidebar-collapse')
-  }
+// 处理顶部菜单点击
+const handleTopMenuClick = (menu) => {
+  // 处理顶部菜单点击逻辑
 }
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 
 // 处理退出登录
 const handleLogout = () => {
@@ -67,401 +175,248 @@ const handleLogout = () => {
     } catch (error) {
       console.error('退出失败:', error)
     }
-  }).catch(() => {
-    // 取消退出
   })
-}
-
-// 处理侧边栏切换
-const handleSidebarToggle = () => {
-  layoutStore.toggleSidebar()
 }
 </script>
 
-<template>
-  <header class="main-header">
-    <!-- Logo -->
-    <a href="../../index2.html" class="logo">
-      <!-- mini logo for sidebar mini 50x50 pixels -->
-      <span class="logo-mini"><b>A</b>LT</span>
-      <!-- logo for regular state and mobile devices -->
-      <span class="logo-lg"><b>{{ userInfo.company.name }}</b></span>
-    </a>
-    <!-- Header Navbar: style can be found in header.less -->
-    <nav class="navbar navbar-static-top">
-      <!-- Sidebar toggle button-->
-      <a class="sidebar-toggle" @click.prevent="handleSidebarToggle">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </a>
-      <div class="collapse navbar-collapse pull-left">
-        <ul class="nav navbar-nav">
-          <li v-for="menu in menuStore.topMenus"
-              :key="menu.id"
-              :class="{ active: activeTopMenu === menu.id }">
-            <a href="#" @click.prevent="handleTopMenuClick(menu)">
-              {{ menu.label }}
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <div class="navbar-custom-menu">
-        <ul class="nav navbar-nav">
-          <!-- Messages Dropdown Menu -->
-          <li class="dropdown messages-menu" :class="{ 'show': activeDropdown === 'messages' }">
-            <a href="#" class="dropdown-toggle" @click="toggleDropdown('messages', $event)">
-              <i class="fa fa-envelope-o"></i>
-              <span class="label label-success">4</span>
-            </a>
-            <ul class="dropdown-menu">
-              <li class="header">You have 4 messages</li>
-              <li>
-                <!-- inner menu: contains the actual data -->
-                <ul class="menu">
-                  <li><!-- start message -->
-                    <a href="#">
-                      <div class="pull-left">
-                        <img src="@/assets/img/w.jpg" class="img-circle" alt="User Image">
-                      </div>
-                      <h4>
-                        Support Team
-                        <small><i class="fa fa-clock-o"></i> 5 mins</small>
-                      </h4>
-                      <p>Why not buy a new awesome theme?</p>
-                    </a>
-                  </li>
-                  <!-- end message -->
-                </ul>
-              </li>
-              <li class="footer"><a href="#">See All Messages</a></li>
-            </ul>
-          </li>
-          <!-- Notifications Dropdown Menu -->
-          <li class="dropdown notifications-menu" :class="{ 'show': activeDropdown === 'notifications' }">
-            <a href="#" class="dropdown-toggle" @click="toggleDropdown('notifications', $event)">
-              <i class="fa fa-bell-o"></i>
-              <span class="label label-warning">10</span>
-            </a>
-            <ul class="dropdown-menu">
-              <li class="header">You have 10 notifications</li>
-              <li>
-                <!-- inner menu: contains the actual data -->
-                <ul class="menu">
-                  <li>
-                    <a href="#">
-                      <i class="fa fa-users text-aqua"></i> 5 new members joined today
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <li class="footer"><a href="#">View all</a></li>
-            </ul>
-          </li>
-          <!-- Tasks Dropdown Menu -->
-          <li class="dropdown tasks-menu" :class="{ 'show': activeDropdown === 'tasks' }">
-            <a href="#" class="dropdown-toggle" @click="toggleDropdown('tasks', $event)">
-              <i class="fa fa-flag-o"></i>
-              <span class="label label-danger">9</span>
-            </a>
-            <ul class="dropdown-menu">
-              <li class="header">You have 9 tasks</li>
-              <li>
-                <!-- inner menu: contains the actual data -->
-                <ul class="menu">
-                  <li><!-- Task item -->
-                    <a href="#">
-                      <h3>
-                        Design some buttons
-                        <small class="pull-right">20%</small>
-                      </h3>
-                      <div class="progress xs">
-                        <div class="progress-bar progress-bar-aqua" style="width: 20%" role="progressbar"
-                             aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">
-                          <span class="sr-only">20% Complete</span>
-                        </div>
-                      </div>
-                    </a>
-                  </li>
-                  <!-- end task item -->
-                </ul>
-              </li>
-              <li class="footer">
-                <a href="#">View all tasks</a>
-              </li>
-            </ul>
-          </li>
-          <!-- User Account Dropdown Menu -->
-          <li class="dropdown user user-menu" :class="{ 'show': activeDropdown === 'user' }">
-            <a href="#" class="dropdown-toggle" @click="toggleDropdown('user', $event)">
-              <img src="@/assets/img/w.jpg" class="user-image" alt="User Image">
-              <span class="hidden-xs">{{ userInfo.user.fullname }}</span>
-              <i class="fa fa-angle-down arrow-icon"></i>
-            </a>
-            <div class="dropdown-menu">
-              <div class="dropdown-arrow"></div>
-              <div class="user-menu-list">
-                <div class="menu-header">
-                  <span class="welcome-text">您好，{{ userInfo.user.fullname }}</span>
-                  <small class="role-text">({{ userInfo.company.name }})</small>
-                </div>
-                <el-menu class="user-menu-items" :default-active="'1'">
-                  <el-menu-item index="1">
-                    <template #title>
-                      <i class="fa fa-user-circle"></i>
-                      <span>个人中心</span>
-                    </template>
-                  </el-menu-item>
-                  <el-menu-item index="3">
-                    <template #title>
-                      <i class="fa fa-shield"></i>
-                      <span>修改密码</span>
-                    </template>
-                  </el-menu-item>
-                  <el-divider></el-divider>
-                  <el-menu-item index="4" class="logout-item" @click="handleLogout">
-                    <template #title>
-                      <i class="fa fa-power-off"></i>
-                      <span>退出系统</span>
-                    </template>
-                  </el-menu-item>
-                </el-menu>
-              </div>
-            </div>
-          </li>
-          <!-- Control Sidebar Toggle Button -->
-          <li>
-            <a href="#" data-toggle="control-sidebar"><i class="fa fa-gears"></i></a>
-          </li>
-        </ul>
-      </div>
-    </nav>
-  </header>
-</template>
-
 <style lang="less" scoped>
-/* 下拉菜单基础样式 */
-.dropdown {
+.main-header {
   position: relative;
-}
-
-.dropdown-menu {
-  position: absolute;
-  right: 0;
-  left: auto;
-  display: none;
-  min-width: 280px;
+  max-height: 50px;
+  z-index: 1030;
   padding: 0;
-  margin: 0;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  background-color: #fff;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: all 0.2s ease;
-}
-
-/* 显示下拉菜单 */
-.dropdown.show .dropdown-menu {
-  display: block;
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-/* 各种下拉菜单特定样式 */
-.messages-menu .dropdown-menu,
-.notifications-menu .dropdown-menu,
-.tasks-menu .dropdown-menu,
-.user-menu .dropdown-menu {
-  width: 280px;
-}
-
-/* 用户菜单特定样式 */
-.user-header {
-  height: 175px;
-  padding: 10px;
-  text-align: center;
-  background-color: #3c8dbc;
-}
-
-.user-header > img {
-  width: 90px;
-  height: 90px;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-}
-
-.user-header > p {
-  color: #fff;
-  margin-top: 10px;
-}
-
-.user-body {
-  padding: 15px;
-  border-bottom: 1px solid #f4f4f4;
-}
-
-.user-footer {
-  padding: 10px;
-  background-color: #f9f9f9;
-}
-
-/* 下拉菜单头部和底部样式 */
-.dropdown-menu > li.header {
-  border-bottom: 1px solid #f4f4f4;
-  padding: 7px 10px;
-  color: #444444;
-  font-size: 14px;
-}
-
-.dropdown-menu > li.footer {
-  border-top: 1px solid #f4f4f4;
-  padding: 7px 10px;
-  text-align: center;
-}
-
-.dropdown-menu > li.footer > a {
-  color: #444444;
-  text-decoration: none;
-}
-
-.dropdown-menu > li.footer > a:hover {
-  text-decoration: underline;
-}
-
-.user-menu {
-  .dropdown-menu {
-    padding: 0;
-    width: 100px;
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    border: 1px solid #ebeef5;
-    background: #fff;
-    overflow: visible;
-    margin-top: 10px;
-    position: relative;
-
-    .dropdown-arrow {
-      position: absolute;
-      top: -5px;
-      right: 16px;
-      width: 8px;
-      height: 8px;
-      background: linear-gradient(135deg, #f8f9fa, #f2f3f5);
-      border-left: 1px solid #ebeef5;
-      border-top: 1px solid #ebeef5;
-      transform: rotate(45deg);
-      z-index: 10;
-      box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.06);
-    }
-
-    .menu-header {
-      padding: 8px 10px;
-      background: linear-gradient(135deg, #f8f9fa, #f2f3f5);
-      border-bottom: 1px solid #ebeef5;
-      position: relative;
-      z-index: 11;
-
-      .welcome-text {
-        font-size: 12px;
-        margin-bottom: 2px;
-      }
-
-      .role-text {
-        font-size: 10px;
-      }
-    }
-  }
-}
-
-:deep(.user-menu-items) {
-  border: none;
-  background: transparent;
-
-  .el-menu-item {
-    height: 32px;
-    line-height: 32px;
-    padding: 0 10px;
-    margin: 2px 3px;
-    border-radius: 4px;
-
-    i {
-      margin-right: 5px;
-      font-size: 13px;
-    }
-
-    span {
-      font-size: 12px;
-    }
-  }
-
-  .el-divider {
-    margin: 3px 0;
-  }
-
-  .logout-item {
-    margin-bottom: 3px;
-  }
-}
-
-/* 优化悬浮效果，避免文字换行 */
-:deep(.user-menu-items .el-menu-item:hover) {
-  padding-left: 14px;
-}
-
-.dropdown-menu {
-  display: none;
-
-  &.show {
-    display: block;
-  }
-}
-
-/* 优化用户头像和名称样式 */
-.dropdown-toggle {
-  padding: 0 15px;
   display: flex;
-  align-items: center;
-  height: 50px;
+  background-color: #3c8dbc;
+  border-bottom: 0;
 
-  .user-image {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    margin-right: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.6);
-  }
-
-  .hidden-xs {
-    color: #fff;
-    font-size: 14px;
-    max-width: 120px;
+  .logo {
+    transition: width .3s ease-in-out;
+    display: block;
+    float: left;
+    height: 50px;
+    font-size: 20px;
+    line-height: 50px;
+    text-align: center;
+    width: 230px;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    padding: 0 15px;
+    font-weight: 300;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-right: 4px;
-  }
-
-  .arrow-icon {
+    background-color: #367fa9;
     color: #fff;
-    font-size: 14px;
-    margin-left: 4px;
-    transition: transform 0.3s ease;
+    border-right: 1px solid #eee;
+    text-decoration: none;
+
+    .logo-lg {
+      display: block;
+      b {
+        font-weight: 700;
+      }
+    }
+
+    .logo-mini {
+      display: block;
+      font-size: 18px;
+      b {
+        font-weight: 700;
+      }
+    }
   }
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.1);
+  .navbar {
+    flex: 1;
+    margin-bottom: 0;
+    margin-left: 0;
+    border: none;
+    height: 50px;
+    border-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
+    background-color: #3c8dbc;
+    display: flex;
+
+    :deep(.el-menu-item) {
+      height: 50px;
+      line-height: 50px;
+      color: #fff;
+      border-bottom: none;
+      
+      &:hover, &:focus {
+        background: rgba(0,0,0,0.1);
+        color: #f6f6f6;
+      }
+    }
+
+    .sidebar-toggle {
+      float: left;
+      background-color: transparent;
+      background-image: none;
+      padding: 15px;
+      font-family: fontAwesome;
+      color: #fff;
+
+      &:hover {
+        background: rgba(0,0,0,0.1);
+        color: #f6f6f6;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0,0,0,0);
+        border: 0;
+      }
+    }
+
+    .flex-grow {
+      flex: 1;
+    }
+  }
+
+  .navbar-custom-menu {
+    float: right;
+    height: 50px;
+    
+    .nav {
+      background-color: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      height: 50px;
+
+      :deep(.el-menu) {
+        background-color: transparent;
+        border: none;
+      }
+
+      :deep(.el-sub-menu) {
+        &__title {
+          color: #fff;
+          height: 50px;
+          line-height: 50px;
+          padding: 0 15px;
+          border-bottom: none;
+
+          &:hover {
+            background: rgba(0,0,0,0.1);
+            color: #f6f6f6;
+          }
+        }
+
+        &__icon {
+          color: #fff;
+        }
+      }
+
+      :deep(.el-menu--popup) {
+        background-color: #fff;
+        padding: 5px 0;
+        border-radius: 2px;
+        min-width: 160px;
+
+        .el-menu-item {
+          height: 36px;
+          line-height: 36px;
+          color: #333;
+          padding: 0 15px;
+
+          &:hover {
+            background-color: #f5f5f5;
+            color: #262626;
+          }
+        }
+
+        .el-divider {
+          margin: 5px 0;
+        }
+      }
+
+      :deep(.el-badge) {
+        margin-right: 0;
+        display: inline-block;
+        position: relative;
+        vertical-align: middle;
+
+        .el-badge__content {
+          position: absolute;
+          top: 8px;
+          right: -12px;
+          z-index: 10;
+          min-width: 10px;
+          height: 10px;
+          padding: 0 4px;
+          background-color: #f56954;
+          color: #fff;
+          border: none;
+          font-weight: normal;
+          font-size: 10px;
+          line-height: 15px;
+          border-radius: 7.5px;
+          transform: translateY(0);
+        }
+      }
+
+      :deep(.el-sub-menu__title) {
+        .el-icon {
+          font-size: 14px;
+          width: 14px;
+          height: 14px;
+          margin-right: 0;
+          vertical-align: middle;
+        }
+      }
+
+      .hidden-xs {
+        margin-left: 5px;
+        color: #fff;
+      }
+
+      .user-menu {
+        :deep(.el-sub-menu__title) {
+          display: flex;
+          align-items: center;
+          padding: 0 15px;
+
+          .el-avatar {
+            margin-right: 5px;
+          }
+        }
+      }
+    }
   }
 }
 
-.user-menu.show {
-  .arrow-icon {
-    transform: rotate(180deg);
+// 当侧边栏折叠时
+.sidebar-collapse {
+  .logo {
+    width: 50px;
   }
+}
+
+:deep(.el-menu--horizontal) {
+  border-bottom: none;
+  
+  .el-menu-item, .el-sub-menu__title {
+    height: 50px;
+    line-height: 50px;
+    color: #fff;
+    background-color: transparent;
+
+    &:hover {
+      background-color: rgba(0,0,0,0.1);
+    }
+
+    .el-sub-menu__icon-arrow {
+      display: none;
+    }
+  }
+}
+
+.el-divider--horizontal {
+  margin: 3px !important;
 }
 </style>

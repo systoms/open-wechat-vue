@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useMenuStore } from '@/store/system'
-import { useTabStore } from '@/store/tab'
-import { useLayoutStore } from '@/store/layout'
+import {ref, computed, watch, onMounted} from 'vue'
+import {useRouter, useRoute} from 'vue-router'
+import {useMenuStore} from '@/store/system'
+import {useTabStore} from '@/store/tab'
+import {useLayoutStore} from '@/store/layout'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,6 +13,7 @@ const layoutStore = useLayoutStore()
 
 // 直接使用所有菜单，不再区分顶部和侧边
 const allMenus = computed(() => menuStore.menus || [])
+console.log(allMenus)
 
 // 存储展开的菜单
 const openedMenus = ref([])
@@ -21,9 +22,9 @@ const openedMenus = ref([])
 const isMenuSelected = (menu) => {
   if (menu.redirect === route.path) return true
   if (menu.children?.length) {
-    return menu.children.some(child => 
-      child.redirect === route.path || 
-      child.children?.some(grandChild => grandChild.redirect === route.path)
+    return menu.children.some(child =>
+        child.redirect === route.path ||
+        child.children?.some(grandChild => grandChild.redirect === route.path)
     )
   }
   return false
@@ -134,189 +135,209 @@ onMounted(() => {
 
 // 监听路由变化
 watch(
-  () => route.path,
-  (newPath) => {
-    if (newPath) {
-      initOpenedMenus()
+    () => route.path,
+    (newPath) => {
+      if (newPath) {
+        initOpenedMenus()
+      }
     }
-  }
 )
 
 // 监听菜单数据变化
 watch(
-  () => menuStore.menus,
-  () => {
-    if (route.path) {
-      initOpenedMenus()
+    () => menuStore.menus,
+    () => {
+      if (route.path) {
+        initOpenedMenus()
+      }
     }
-  }
 )
 </script>
 
 <template>
-  <aside class="main-sidebar" :class="{ 'sidebar-collapse': layoutStore.sidebarCollapsed }">
-    <section class="sidebar">
-      <div class="sidebar-menu-wrapper">
-        <ul class="sidebar-menu" data-widget="tree">
-          <template v-for="(menu, index) in allMenus" :key="index">
-            <!-- Header menu item -->
-            <li v-if="menu.type === 0" class="header">
-              {{ menu.label }}
-            </li>
+  <el-aside
+      ref="aside"
+      :style="{width: layoutStore.sidebarCollapsed ? '50px' : '230px'}"
+      width="230px"
+      :collapse="layoutStore.sidebarCollapsed"
+  >
+    <el-scrollbar height="calc(100vh - 50px)">
+      <el-menu
+          :default-active="route.path"
+          :collapse="layoutStore.sidebarCollapsed"
+          :unique-opened="true"
+          background-color="#222d32"
+          text-color="#b8c7ce"
+          active-text-color="#ffffff"
+          :collapse-transition="true"
+          class="el-menu-vertical"
+      >
+        <template v-for="menu in allMenus" :key="menu.id">
+          <!-- 无子菜单的菜单项 -->
+          <el-menu-item
+              v-if="!menu.children?.length"
+              :index="menu.redirect"
+              @click="handleMenuClick(menu)"
+          >
+            <el-icon>
+            </el-icon>
+            <template #title>
+              <span>{{ menu.label }}</span>
+            </template>
+          </el-menu-item>
 
-            <!-- Regular menu item with potential children -->
-            <li :class="{
-              treeview: menu.children?.length > 0,
-              active: isMenuSelected(menu),
-              'menu-open': isMenuOpen(menu)
-            }">
-              <a @click.prevent="handleMenuClick(menu)">
-                <i :class="menu.icon"></i>
-                <span>{{ menu.label }}</span>
-                <span v-if="menu.children?.length" class="pull-right-container">
-                  <i class="fa fa-angle-left pull-right"></i>
-                </span>
-              </a>
+          <!-- 有子菜单的菜单项 -->
+          <el-sub-menu
+              v-else
+              :index="menu.id.toString()"
+              :class="{ 'is-active': isMenuSelected(menu) }"
+          >
+            <template #title>
+              <el-icon>
+              </el-icon>
+              <span>{{ menu.label }}</span>
+            </template>
 
-              <!-- Submenu items -->
-              <ul v-if="menu.children?.length" class="treeview-menu" :style="{ display: isMenuOpen(menu) ? 'block' : 'none' }">
-                <li v-for="(subMenu, subIndex) in menu.children"
-                    :key="subIndex"
-                    :class="{ active: isMenuSelected(subMenu) }"
-                    @click.prevent="handleMenuClick(subMenu)">
-                  <a>
-                    <i :class="subMenu.icon"></i>
-                    {{ subMenu.label }}
-                  </a>
+            <!-- 递归渲染子菜单 -->
+            <template v-for="subMenu in menu.children" :key="subMenu.id">
+              <!-- 二级菜单项 -->
+              <el-menu-item
+                  v-if="!subMenu.children?.length"
+                  :index="subMenu.redirect"
+                  @click="handleMenuClick(subMenu)"
+              >
+                <el-icon>
+                </el-icon>
+                <template #title>
+                  <span>{{ subMenu.label }}</span>
+                </template>
+              </el-menu-item>
 
-                  <!-- 三级菜单 -->
-                  <ul v-if="subMenu.children?.length" class="treeview-menu">
-                    <li v-for="(grandChild, grandChildIndex) in subMenu.children"
-                        :key="grandChildIndex"
-                        :class="{ active: isMenuSelected(grandChild) }"
-                        @click.prevent="handleMenuClick(grandChild)">
-                      <a>
-                        <i :class="grandChild.icon"></i>
-                        {{ grandChild.label }}
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-            </li>
-          </template>
-        </ul>
-      </div>
-    </section>
-  </aside>
+              <!-- 三级菜单 -->
+              <el-sub-menu
+                  v-else
+                  :index="subMenu.id.toString()"
+                  :class="{ 'is-active': isMenuSelected(subMenu) }"
+              >
+                <template #title>
+                  <el-icon>
+                    <component :is="subMenu.icon"/>
+                  </el-icon>
+                  <span>{{ subMenu.label }}</span>
+                </template>
+
+                <el-menu-item
+                    v-for="grandChild in subMenu.children"
+                    :key="grandChild.id"
+                    :index="grandChild.redirect"
+                    @click="handleMenuClick(grandChild)"
+                >
+                  <el-icon>
+                    <component :is="grandChild.icon"/>
+                  </el-icon>
+                  <template #title>
+                    <span>{{ grandChild.label }}</span>
+                  </template>
+                </el-menu-item>
+              </el-sub-menu>
+            </template>
+          </el-sub-menu>
+        </template>
+      </el-menu>
+    </el-scrollbar>
+  </el-aside>
 </template>
 
 <style lang="less" scoped>
-.main-sidebar {
-  transition: width 0.3s ease-in-out;
-  width: 230px;
+.el-scrollbar {
+  width: 100%;
+}
 
-  &.sidebar-collapse {
+.el-aside {
+  background-color: #222d32;
+  transition: width 0.3s;
+
+  .menu-header {
+    padding: 12px 5px 12px 15px;
+    color: #4b646f;
+    background: #1a2226;
+    font-size: 12px;
+  }
+
+  .el-menu-vertical {
+    border-right: none;
+
+    :deep(.el-menu-item) {
+      &.is-active {
+        background-color: #2c3b41;
+      }
+
+      &:hover {
+        background-color: #2c3b41;
+      }
+    }
+
+    :deep(.el-sub-menu) {
+      .el-sub-menu__title {
+        &:hover {
+          background-color: #2c3b41;
+        }
+      }
+
+      &.is-active {
+        > .el-sub-menu__title {
+          color: #ffffff;
+        }
+      }
+    }
+  }
+
+  // 折叠时的样式
+  :deep(.el-menu--collapse) {
     width: 50px;
-    
-    .logo-lg {
-      display: none;
-    }
-    
-    .logo-mini {
-      display: block;
-    }
-    
-    .sidebar {
-      .sidebar-menu {
-        > li {
-          > a {
-            padding: 12px 5px;
-            
-            > span {
-              display: none;
-            }
-            
-            > .pull-right-container {
-              display: none;
-            }
-          }
-          
-          &:hover {
-            > a {
-              > span {
-                display: block;
-                position: absolute;
-                left: 50px;
-                top: 0;
-                margin-left: -3px;
-                padding: 12px 5px 12px 20px;
-                min-width: 180px;
-                background: #2c3b41;
-              }
-              
-              > .pull-right-container {
-                display: block;
-                position: absolute;
-                left: 230px;
-                top: 50%;
-                transform: translateY(-50%);
-              }
-            }
-            
-            > .treeview-menu {
-              display: block !important;
-              position: absolute;
-              left: 50px;
-              top: 41px;
-              margin-left: -3px;
-              min-width: 180px;
-              background: #2c3b41;
-            }
-          }
+
+    .el-sub-menu {
+      &.is-active {
+        > .el-sub-menu__title {
+          color: #ffffff;
         }
       }
     }
   }
 }
 
-.main-sidebar {
-  .sidebar {
-    height: 100%;
-    overflow: hidden;
-    
-    .sidebar-menu-wrapper {
-      height: calc(100vh - 50px);
-      overflow-y: auto;
-      overflow-x: hidden;
+// 弹出的子菜单样式
+:deep(.el-menu--popup) {
+  min-width: 200px;
+  background-color: #2c3b41;
 
-      // 更细的滚动条样式
-      &::-webkit-scrollbar {
-        width: 2px;
-      }
+  .el-menu-item {
+    background-color: #2c3b41;
+    color: #b8c7ce;
 
-      &::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.08);
-        border-radius: 1px;
-      }
-
-      &::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.15);
-      }
+    &:hover {
+      background-color: #1e282c;
     }
+
+    &.is-active {
+      background-color: #1e282c;
+      color: #ffffff;
+    }
+  }
+
+  .el-sub-menu__title {
+    color: #b8c7ce;
   }
 }
 
-// 修改悬停时的滚动条样式
-.sidebar:hover {
-  .sidebar-menu-wrapper {
-    &::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.12);
-    }
+// 修复菜单图标样式
+:deep(.el-menu-item), :deep(.el-sub-menu__title) {
+  .el-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 5px;
+    text-align: center;
+    font-size: 18px;
   }
 }
 </style>
