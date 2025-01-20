@@ -165,7 +165,6 @@ const removeItem = (index) => {
   flex-direction: column;
   flex-wrap: wrap;
   align-content: space-around;
-  padding-left: 60px;
   position: relative;
   overflow-y: scroll;
   background: #f7f8fa;

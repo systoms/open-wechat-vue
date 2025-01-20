@@ -50,7 +50,7 @@ import PreviewDialog from '@/components/PreviewDialog.vue'
 import ComponentsPanel from '@/components/drag/config/ComponentPanel.vue'
 import PageConfig from '@/components/drag/config/PageConfig.vue'
 import ComponentManage from '@/components/drag/config/ComponentManage.vue'
-import ActionPanel from '@/components/drag/module/ActionPanel.vue'
+import ActionPanel from '@/components/drag/config/ActionPanel.vue'
 import ComponentCanvas from '@/components/drag/config/ComponentCanvas.vue'
 import {useTabStore} from '@/store/tab'
 
