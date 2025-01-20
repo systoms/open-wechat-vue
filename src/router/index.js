@@ -31,11 +31,6 @@ const routes = [
                 meta: { title: '微信菜单管理' }
             },
             {
-                path: '/wechat/offiaccount/:appid/draft',
-                component: () => import('@/views/wechat/offiaccount/draft/index.vue'),
-                meta: { title: '草稿箱管理' }
-            },
-            {
                 path: '/wechat/miniprogram',
                 component: () => import('@/views/wechat/miniprogram/index.vue'),
                 meta: { title: '微信小程序管理' }
@@ -54,11 +49,6 @@ const routes = [
                 path: '/page/edit',
                 component: () => import('@/views/page/edit.vue'),
                 meta: { title: '页面编辑' }
-            },
-            {
-                path: '/drag/index',
-                component: () => import('@/views/drag/index.vue'),
-                meta: { title: '拖拽管理' }
             },
             {
                 path: '/table/index',

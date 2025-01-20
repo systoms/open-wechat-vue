@@ -163,14 +163,11 @@ const removeItem = (index) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  padding: 20px;
+  flex-wrap: wrap;
+  align-content: space-around;
   padding-left: 60px;
   position: relative;
   overflow-y: scroll;
-  -webkit-box-pack: center;
-  -ms-flex-pack: center;
-  justify-content: center;
   background: #f7f8fa;
 
   .preview-wrapper {
@@ -178,7 +175,7 @@ const removeItem = (index) => {
     min-height: 760px;
     -webkit-box-shadow: 0 0 14px 0 rgba(0, 0, 0, .1);
     box-shadow: 0 0 14px 0 rgba(0, 0, 0, .1);
-    margin: 45px 0;
+    margin: 47px 0 0 0;
     position: relative;
   }
 

@@ -294,11 +294,11 @@ watch(() => currentHoverIndex, (newVal) => {
 
 <style lang="less" scoped>
 .page-container {
-  height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f5f7fa;
   overflow: visible;
+  height: ~"calc(100vh - 141px)";
 }
 
 .page-content {
