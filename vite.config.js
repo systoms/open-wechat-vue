@@ -11,13 +11,14 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig(({command}) => {
     const isDev = command === 'serve'; // 判断是否为开发环境
+    console.log(isDev);
     return {
         plugins: [
             vue(),
 
             viteMockServe({
                 mockPath: 'src/mock', // 指定存放 Mock 数据的文件夹
-                localEnabled: isDev,  // 仅在开发环境启用 Mock
+                localEnabled: false,  // 仅在开发环境启用 Mock
                 prodEnabled: false,   // 默认生产环境禁用
                 injectCode: `
           import { setupProdMockServer } from './mock/_createProductionServer';

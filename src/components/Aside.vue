@@ -166,9 +166,9 @@ watch(
           :default-active="route.path"
           :collapse="layoutStore.sidebarCollapsed"
           :unique-opened="true"
-          background-color="#222d32"
-          text-color="#b8c7ce"
-          active-text-color="#ffffff"
+          background-color="#304156"
+          text-color="#bfcbd9"
+          active-text-color="#409EFF"
           :collapse-transition="true"
           class="el-menu-vertical"
       >
@@ -253,8 +253,14 @@ watch(
   width: 100%;
 }
 
+/* 使用深度选择器调整标题的高度 */
+.el-sub-menu__title {
+  height: 50px; /* 设置需要的高度 */
+  line-height: 50px; /* 垂直居中 */
+}
+
 .el-aside {
-  background-color: #222d32;
+  background-color: #304156;
   transition: width 0.3s;
 
   .menu-header {
@@ -269,24 +275,24 @@ watch(
 
     :deep(.el-menu-item) {
       &.is-active {
-        background-color: #2c3b41;
+        background-color: #263445;
       }
 
       &:hover {
-        background-color: #2c3b41;
+        background-color: #263445;
       }
     }
 
     :deep(.el-sub-menu) {
       .el-sub-menu__title {
         &:hover {
-          background-color: #2c3b41;
+          background-color: #263445;
         }
       }
 
       &.is-active {
         > .el-sub-menu__title {
-          color: #ffffff;
+          color: #409EFF;
         }
       }
     }
@@ -306,38 +312,103 @@ watch(
   }
 }
 
-// 弹出的子菜单样式
-:deep(.el-menu--popup) {
-  min-width: 200px;
-  background-color: #2c3b41;
+/* 调整菜单项和子菜单标题的高度和内边距 */
+:deep(.el-menu-item), :deep(.el-sub-menu__title) {
+  height: 50px;
+  line-height: 50px;
+  padding-left: 15px !important;
 
-  .el-menu-item {
-    background-color: #2c3b41;
-    color: #b8c7ce;
-
-    &:hover {
-      background-color: #1e282c;
-    }
-
-    &.is-active {
-      background-color: #1e282c;
-      color: #ffffff;
-    }
-  }
-
-  .el-sub-menu__title {
-    color: #b8c7ce;
+  .el-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    text-align: center;
+    font-size: 16px;
   }
 }
 
-// 修复菜单图标样式
-:deep(.el-menu-item), :deep(.el-sub-menu__title) {
-  .el-icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 5px;
-    text-align: center;
-    font-size: 18px;
+/* 调整子菜单箭头位置 */
+:deep(.el-sub-menu__title) {
+  position: relative;
+  
+  .el-sub-menu__icon-arrow {
+    position: absolute;
+    top: 22px;
+    right: 15px;
+    margin-top: -6px;
+  }
+}
+
+// 弹出菜单样式
+:deep(.el-menu--popup) {
+  min-width: 200px !important;
+  
+  .el-menu-item {
+    height: 50px !important;
+    line-height: 50px !important;
+    padding: 0 15px !important;
+  }
+}
+
+// 处理弹出菜单的容器
+:deep(.el-popper) {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  
+  .el-menu {
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+// 处理所有可能的弹出菜单容器
+:deep([class*='el-popper'][class*='is-light']) {
+  border: none !important;
+  padding: 0 !important;
+  
+  .el-menu {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+
+/* 修改菜单项的高度 */
+.el-menu-vertical .el-menu-item {
+  height: 50px !important; /* 修改菜单项高度 */
+  line-height: 50px !important; /* 确保文本垂直居中 */
+}
+
+/* 修改子菜单标题的高度 */
+.el-menu-vertical .el-sub-menu .el-menu-item {
+  height: 50px; /* 修改子菜单项高度 */
+  line-height: 50px; /* 确保子菜单项文本垂直居中 */
+}
+
+/* 修改折叠后的子菜单高度 */
+.el-menu-vertical .el-sub-menu.is-collapsed .el-menu-item {
+  height: 50px; /* 折叠时子菜单项的高度 */
+  line-height: 50px; /* 确保子菜单项文本垂直居中 */
+}
+
+/* 修改子菜单的弹出位置和高度 */
+.el-menu-vertical .el-sub-menu.is-opened {
+  background-color: #1f2d3d;
+}
+
+/* 也可以通过深度选择器修改折叠时子菜单的高度 */
+::v-deep .el-menu-item {
+  height: 50px !important;
+  line-height: 50px !important;
+}
+
+.el-menu.el-menu--popup {
+  .el-menu-item {
+    height: 50px !important;
+    line-height: 50px !important;
   }
 }
 </style>
