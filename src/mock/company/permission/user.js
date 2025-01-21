@@ -9,327 +9,260 @@ export default [
                 code: 200,
                 message: '成功',
                 data: {
-                    user: {
-                        avatar: '',
+                    "company": {
+                        "name": "测试"
                     },
-                    menus: [
+                    "user": {
+                        "rand_id": "0",
+                        "fullname": "测试"
+                    },
+                    "menus": [
                         {
-                            id: number++,
-                            label: "MAIN NAVIGATION",
-                            type: 0,
+                            "id": 10000,
+                            "parent_id": 0,
+                            "label": "控制台",
+                            "code": " ",
+                            "icon": "fa fa-circle-o",
+                            "route": "/",
+                            "component": null,
+                            "redirect": "/",
+                            "type": "",
+                            "children": []
                         },
                         {
-                            id: number++,
-                            label: "微信管理",
-                            type: 1,
-                            icon: "fa fa-wechat",
-                            children: [
+                            "id": 20000,
+                            "parent_id": 0,
+                            "label": "授权管理",
+                            "code": " ",
+                            "icon": "fa fa-circle-o",
+                            "route": null,
+                            "component": null,
+                            "redirect": null,
+                            "type": "",
+                            "children": [
                                 {
-                                    id: number++,
-                                    label: "菜单管理",
-                                    path: "/wechat/menu",
-                                    icon: "fa fa-circle-o",
+                                    "id": 21000,
+                                    "parent_id": 20000,
+                                    "label": "微信公众号管理",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": "/wechat/offiaccount",
+                                    "component": null,
+                                    "redirect": "/wechat/offiaccount",
+                                    "type": "",
+                                    "children": []
                                 },
                                 {
-                                    id: number++,
-                                    label: "拖拽管理",
-                                    path: "/drag/index",
-                                    icon: "fa fa-circle-o",
+                                    "id": 22000,
+                                    "parent_id": 20000,
+                                    "label": "微信小程序管理",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": "/wechat/miniprogram",
+                                    "component": null,
+                                    "redirect": "/wechat/miniprogram",
+                                    "type": "",
+                                    "children": []
                                 },
+                                {
+                                    "id": 23000,
+                                    "parent_id": 20000,
+                                    "label": "微信商户管理",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": "/wechat/pay",
+                                    "component": null,
+                                    "redirect": "/wechat/pay",
+                                    "type": "",
+                                    "children": []
+                                }
                             ]
                         },
                         {
-                            id: number++,
-                            label: "表格管理",
-                            type: 1,
-                            icon: "fa fa-table",
-                            path: "/table/index",
-                            children: []
+                            "id": 30000,
+                            "parent_id": 0,
+                            "label": "页面管理",
+                            "code": " ",
+                            "icon": "fa fa-circle-o",
+                            "route": "/page/index",
+                            "component": null,
+                            "redirect": "/page/index",
+                            "type": "",
+                            "children": []
                         },
                         {
-                            id: number++,
-                            label: "Dashboard",
-                            type: 1,
-                            icon: "fa fa-dashboard",
-                            children: [
+                            "id": 40000,
+                            "parent_id": 0,
+                            "label": "业务管理",
+                            "code": " ",
+                            "icon": "fa fa-circle-o",
+                            "route": null,
+                            "component": null,
+                            "redirect": null,
+                            "type": "",
+                            "children": [
                                 {
-                                    id: number++,
-                                    label: "Dashboard v1",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
+                                    "id": 41000,
+                                    "parent_id": 40000,
+                                    "label": "CPS业务",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
                                 },
                                 {
-                                    id: number++,
-                                    label: "Dashboard v2",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
+                                    "id": 42000,
+                                    "parent_id": 40000,
+                                    "label": "CPA业务",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
                                 },
+                                {
+                                    "id": 43000,
+                                    "parent_id": 40000,
+                                    "label": "运营商业务",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
+                                }
                             ]
                         },
                         {
-                            id: number++,
-                            label: "Layout Options",
-                            type: 1,
-                            icon: "fa fa-files-o",
-                            children: [
+                            "id": 50000,
+                            "parent_id": 0,
+                            "label": "财务管理",
+                            "code": " ",
+                            "icon": "fa fa-circle-o",
+                            "route": null,
+                            "component": null,
+                            "redirect": null,
+                            "type": "",
+                            "children": [
                                 {
-                                    id: number++,
-                                    label: "Top Navigation",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
+                                    "id": 51000,
+                                    "parent_id": 50000,
+                                    "label": "账户预览",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
                                 },
                                 {
-                                    id: number++,
-                                    label: "Boxed",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
+                                    "id": 52000,
+                                    "parent_id": 50000,
+                                    "label": "账户实名",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
                                 },
                                 {
-                                    id: number++,
-                                    label: "Fixed",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Collapsed Sidebar",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
+                                    "id": 53000,
+                                    "parent_id": 50000,
+                                    "label": "收款账户",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
+                                }
                             ]
                         },
                         {
-                            id: number++,
-                            label: "Widgets",
-                            type: 1,
-                            icon: "fa fa-th",
-                            children: []
-                        },
-                        {
-                            id: number++,
-                            label: "Charts",
-                            type: 1,
-                            icon: "fa fa-pie-chart",
-                            children: [
+                            "id": 60000,
+                            "parent_id": 0,
+                            "label": "用户管理",
+                            "code": " ",
+                            "icon": "fa fa-circle-o",
+                            "route": null,
+                            "component": null,
+                            "redirect": null,
+                            "type": "",
+                            "children": [
                                 {
-                                    id: number++,
-                                    label: "ChartJS",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
+                                    "id": 61000,
+                                    "parent_id": 60000,
+                                    "label": "手机号用户管理",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
                                 },
                                 {
-                                    id: number++,
-                                    label: "Morris",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Flot",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Inline charts",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
+                                    "id": 62000,
+                                    "parent_id": 60000,
+                                    "label": "微信用户管理",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": null,
+                                    "component": null,
+                                    "redirect": null,
+                                    "type": "",
+                                    "children": []
+                                }
                             ]
                         },
                         {
-                            id: number++,
-                            label: "UI Elements",
-                            type: 1,
-                            icon: "fa fa-laptop",
-                            children: [
+                            "id": 70000,
+                            "parent_id": 0,
+                            "label": "系统管理",
+                            "code": " ",
+                            "icon": "fa fa-circle-o",
+                            "route": null,
+                            "component": null,
+                            "redirect": null,
+                            "type": "",
+                            "children": [
                                 {
-                                    id: number++,
-                                    label: "General",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
+                                    "id": 71000,
+                                    "parent_id": 70000,
+                                    "label": "用户管理",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": "/system/user",
+                                    "component": null,
+                                    "redirect": "/system/user",
+                                    "type": "",
+                                    "children": []
                                 },
                                 {
-                                    id: number++,
-                                    label: "Icons",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Buttons",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Sliders",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Timeline",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Modals",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
+                                    "id": 72000,
+                                    "parent_id": 70000,
+                                    "label": "角色管理",
+                                    "code": " ",
+                                    "icon": "fa fa-circle-o",
+                                    "route": "/system/role",
+                                    "component": null,
+                                    "redirect": "/system/role",
+                                    "type": "",
+                                    "children": []
+                                }
                             ]
-                        },
-                        {
-                            id: number++,
-                            label: "Forms",
-                            type: 1,
-                            icon: "fa fa-edit",
-                            children: [
-                                {
-                                    id: number++,
-                                    label: "General Elements",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Advanced Elements",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Editors",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                            ]
-                        },
-                        {
-                            id: number++,
-                            label: "Tables",
-                            type: 1,
-                            icon: "fa fa-table",
-                            children: [
-                                {
-                                    id: number++,
-                                    label: "Simple tables",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Data tables",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                            ]
-                        },
-                        {
-                            id: number++,
-                            label: "Calendar",
-                            type: 1,
-                            icon: "fa fa-calendar",
-                            children: []
-                        },
-                        {
-                            id: number++,
-                            label: "Mailbox",
-                            type: 1,
-                            icon: "fa fa-envelope",
-                            children: []
-                        },
-                        {
-                            id: number++,
-                            label: "Examples",
-                            type: 1,
-                            icon: "fa fa-folder",
-                            children: [
-                                {
-                                    id: number++,
-                                    label: "Invoice",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Profile",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Login",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Register",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Lockscreen",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "404 Error",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "500 Error",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Blank Page",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                                {
-                                    id: number++,
-                                    label: "Pace Page",
-                                    path: "/index",
-                                    icon: "fa fa-circle-o",
-                                },
-                            ]
-                        },
-                        {
-                            id: number++,
-                            label: "LABELS",
-                            type: 0,
-                        },
-                        {
-                            id: number++,
-                            label: "Important",
-                            type: 1,
-                            icon: "fa fa-circle-o text-red",
-                            children: []
-                        },
-                        {
-                            id: number++,
-                            label: "Warning",
-                            type: 1,
-                            icon: "fa fa-circle-o text-yellow",
-                            children: []
-                        },
-                        {
-                            id: number++,
-                            label: "Information",
-                            type: 1,
-                            icon: "fa fa-circle-o text-aqua",
-                            children: []
-                        },
-                    ],
+                        }
+                    ]
                 },
             };
         },

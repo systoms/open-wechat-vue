@@ -77,21 +77,18 @@ const userInfo = computed(() => ({
 
   .el-header,
   .el-footer {
-    background-color: var(--el-color-primary-light-7);
+    background-color: #3c8dbc;
     color: var(--el-text-color-primary);
-    text-align: center;
   }
 
   .el-aside {
     color: var(--el-text-color-primary);
     background: #f7f8fa;
-    text-align: center;
   }
 
   .el-main {
     background-color: var(--el-color-primary-light-9);
     color: var(--el-text-color-primary);
-    text-align: center;
     height: calc(100vh - 100px);
     padding: 0;
 
