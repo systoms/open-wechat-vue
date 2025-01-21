@@ -186,7 +186,7 @@ const handleLogout = () => {
   z-index: 1030;
   padding: 0;
   display: flex;
-  background-color: #3c8dbc;
+  background-color: #4abdff;
   border-bottom: 0;
 
   .logo {
@@ -202,7 +202,7 @@ const handleLogout = () => {
     padding: 0 15px;
     font-weight: 300;
     overflow: hidden;
-    background-color: #367fa9;
+    background-color: #4abdff;
     color: #fff;
     border-right: 1px solid #eee;
     text-decoration: none;
@@ -232,7 +232,7 @@ const handleLogout = () => {
     border-radius: 0;
     padding-left: 0;
     padding-right: 0;
-    background-color: #3c8dbc;
+    background-color: #4abdff;
     display: flex;
 
     :deep(.el-menu-item) {

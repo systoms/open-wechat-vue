@@ -29,6 +29,7 @@ import TabView from "@/components/TabView.vue";
 import {useMenuStore} from '@/store/system'
 import {getInfo} from '@/api/permission/user'
 
+// 删除未使用的样式导入
 // import "@/assets/font-awesome/less/font-awesome.less";
 // import "@/assets/bootstrap/less/bootstrap.less";
 // import "@/assets/AdminLTE/AdminLTE.less";
@@ -39,7 +40,7 @@ const company = ref({name: ''})
 const user = ref({rand_id: '', fullname: ''})
 const isCollapsed = ref(false)
 
-const toggleSidebar = async () => {
+const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value;
 }
 
@@ -47,7 +48,6 @@ const toggleSidebar = async () => {
 const initUserInfo = async () => {
   try {
     const {data} = await getInfo()
-    // 设置菜单
     menuStore.setMenus(data.menus)
     company.value = data.company
     user.value = data.user
@@ -56,12 +56,8 @@ const initUserInfo = async () => {
   }
 }
 
-// 在组件挂载时初始化用户信息
-onMounted(() => {
-  initUserInfo()
-})
+onMounted(initUserInfo)
 
-// 使用 computed 包装用户信息
 const userInfo = computed(() => ({
   company: company.value,
   user: user.value
@@ -87,8 +83,8 @@ const userInfo = computed(() => ({
   }
 
   .el-aside {
-    background-color: var(--el-color-primary-light-8);
     color: var(--el-text-color-primary);
+    background: #f7f8fa;
     text-align: center;
   }
 
