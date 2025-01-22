@@ -153,8 +153,8 @@ watch(
           :default-active="route.path"
           :collapse="layoutStore.sidebarCollapsed"
           :unique-opened="true"
-          background-color="#304156"
-          text-color="#bfcbd9"
+          background-color="#f4f4f5"
+          text-color="#444"
           active-text-color="#409EFF"
           :collapse-transition="true"
           class="el-menu-vertical"
@@ -166,8 +166,7 @@ watch(
               :index="menu.redirect"
               @click="handleMenuClick(menu)"
           >
-            <el-icon>
-            </el-icon>
+            <i :class="menu.icon"></i>
             <template #title>
               <span>{{ menu.label }}</span>
             </template>
@@ -180,8 +179,7 @@ watch(
               :class="{ 'is-active': isMenuSelected(menu) }"
           >
             <template #title>
-              <el-icon>
-              </el-icon>
+              <i :class="menu.icon"></i>
               <span>{{ menu.label }}</span>
             </template>
 
@@ -189,12 +187,12 @@ watch(
             <template v-for="subMenu in menu.children" :key="subMenu.id">
               <!-- 二级菜单项 -->
               <el-menu-item
+                  background-color="#545c64"
                   v-if="!subMenu.children?.length"
                   :index="subMenu.redirect"
                   @click="handleMenuClick(subMenu)"
               >
-                <el-icon>
-                </el-icon>
+                <i :class="subMenu.icon"></i>
                 <template #title>
                   <span>{{ subMenu.label }}</span>
                 </template>
@@ -207,9 +205,7 @@ watch(
                   :class="{ 'is-active': isMenuSelected(subMenu) }"
               >
                 <template #title>
-                  <el-icon>
-                    <component :is="subMenu.icon"/>
-                  </el-icon>
+                  <i :class="subMenu.icon"></i>
                   <span>{{ subMenu.label }}</span>
                 </template>
 
@@ -219,9 +215,7 @@ watch(
                     :index="grandChild.redirect"
                     @click="handleMenuClick(grandChild)"
                 >
-                  <el-icon>
-                    <component :is="grandChild.icon"/>
-                  </el-icon>
+                  <i :class="grandChild.icon"></i>
                   <template #title>
                     <span>{{ grandChild.label }}</span>
                   </template>
@@ -321,14 +315,29 @@ watch(
   }
 }
 
+
+:deep(.el-sub-menu__title), :deep(.el-menu-item) {
+  i.fa {
+    display: inline-block;
+    width: 20px;
+  }
+
+  * {
+    vertical-align: middle;
+  }
+}
+
 :deep(.el-menu) {
+
   &:not(.el-menu--collapse) {
     .el-sub-menu__title {
       display: block;
       padding: 12px 5px 12px 15px;
       position: relative;
-      i.el-icon {
-        display: inline-block;
+      line-height: unset;
+
+      &:hover {
+        color: #ddd;
       }
 
       .el-icon {
@@ -336,6 +345,11 @@ watch(
           position: absolute;
           right: 10px;
           font-size: 14px;
+          top: 50%;
+          margin-top: -7px;
+          width: unset;
+          height: unset;
+          transform: rotateZ(90deg);
         }
       }
     }

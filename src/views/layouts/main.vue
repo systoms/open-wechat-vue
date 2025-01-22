@@ -28,9 +28,9 @@ import Footer from "@/components/Footer.vue";
 import TabView from "@/components/TabView.vue";
 import {useMenuStore} from '@/store/system'
 import {getInfo} from '@/api/permission/user'
+import "@/assets/font-awesome/less/font-awesome.less";
 
 // 删除未使用的样式导入
-// import "@/assets/font-awesome/less/font-awesome.less";
 // import "@/assets/bootstrap/less/bootstrap.less";
 // import "@/assets/AdminLTE/AdminLTE.less";
 // import "@/assets/AdminLTE/skins/skin-blue-light.less";
