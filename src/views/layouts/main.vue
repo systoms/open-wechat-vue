@@ -64,6 +64,11 @@ const userInfo = computed(() => ({
 }))
 </script>
 
+<style>
+:root {
+  --aside-background-color: #f4f4f5;
+}
+</style>
 <style scoped lang="less">
 .common-layout {
   .el-header,
@@ -71,7 +76,6 @@ const userInfo = computed(() => ({
   .el-main,
   .el-aside {
     display: flex;
-    justify-content: center;
     align-items: center;
   }
 
@@ -83,7 +87,7 @@ const userInfo = computed(() => ({
 
   .el-aside {
     color: var(--el-text-color-primary);
-    background: #f7f8fa;
+    background: var(--aside-background-color);
   }
 
   .el-main {

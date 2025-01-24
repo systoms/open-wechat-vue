@@ -145,8 +145,7 @@ watch(
 <template>
   <el-aside
       ref="aside"
-      :style="{width: layoutStore.sidebarCollapsed ? '50px' : '230px'}"
-      :collapse="layoutStore.sidebarCollapsed"
+      :class="{'el-aside-collapse':layoutStore.sidebarCollapsed}"
   >
     <el-scrollbar height="calc(100vh - 50px)">
       <el-menu
@@ -229,31 +228,59 @@ watch(
   </el-aside>
 </template>
 
+<style>
+:root {
+  --aside-width: 230px;
+  --aside-collapse-width: 50px;
+  --aside-border-color: #d2d6de;
+}
+</style>
 <style lang="less" scoped>
-.el-aside {
-  background-color: #f9fafc;
-  transition: width 0.3s;
-  border-right: 1px solid #d2d6de;
 
-  :root {
-    --el-menu-text-color: #333; // 修改字体颜色为深灰色
+.el-menu-vertical:not(.el-menu--collapse) {
+  width: var(--aside-width);
+  min-height: 400px;
+}
+
+.el-menu-vertical.el-menu--collapse {
+  width: var(--aside-collapse-width);
+  min-height: 400px;
+}
+
+.el-aside {
+  width: var(--aside-collapse-width);
+  border-right: 1px solid var(--aside-border-color);
+
+  &:not(.el-aside-collapse) {
+    width: var(--aside-width);
   }
 
-  .el-menu-vertical {
+  .el-menu.el-menu-vertical {
     border-right: none;
-    background-color: #f7f8fa;
-    color: var(--el-menu-text-color); // 使用变量定义的颜色
-    width: 230px;
 
-    :deep(.el-menu-item), :deep(.el-sub-menu__title) {
+    .el-menu-item-styles() {
       height: 44px;
       line-height: 44px;
-      padding-left: 15px !important;
+      padding-left: 20px !important;
       color: #444 !important;
+    }
+
+    .el-menu-item, .el-sub-menu :deep(.el-sub-menu__title) {
+      height: 44px;
+      display: block;
+      padding: 12px 5px 12px 15px;
+      position: relative;
+      line-height: unset;
+      * {
+        vertical-align: middle;
+      }
+      i.fa {
+        display: inline-block;
+        width: 20px;
+      }
 
       &:hover, &.is-active {
         background-color: #f4f4f5;
-        color: #000 !important;
       }
 
       .el-icon {
@@ -262,85 +289,7 @@ watch(
         margin-right: 10px;
         text-align: center;
         font-size: 16px;
-      }
-    }
 
-    :deep(.el-sub-menu) {
-      &.is-active > .el-sub-menu__title {
-        color: #409EFF;
-      }
-    }
-  }
-}
-
-:deep(.el-menu--popup) {
-  min-width: 200px !important;
-  background-color: #304156;
-
-  .el-menu-item {
-    height: 44px !important;
-    line-height: 44px !important;
-    padding: 0 15px !important;
-
-    &:hover, &.is-active {
-      background-color: #f4f4f5;
-      color: #000 !important;
-    }
-  }
-}
-
-:deep(.el-popper) {
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-
-  .el-menu {
-    border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #f4f4f5;
-  }
-}
-
-
-:deep(.el-sub-menu) {
-  &.is-active {
-    .el-menu {
-      background: #f4f4f5 !important;
-
-      .el-menu-item {
-        background: #f4f4f5 !important;
-      }
-    }
-  }
-}
-
-
-:deep(.el-sub-menu__title), :deep(.el-menu-item) {
-  i.fa {
-    display: inline-block;
-    width: 20px;
-  }
-
-  * {
-    vertical-align: middle;
-  }
-}
-
-:deep(.el-menu) {
-
-  &:not(.el-menu--collapse) {
-    .el-sub-menu__title {
-      display: block;
-      padding: 12px 5px 12px 15px;
-      position: relative;
-      line-height: unset;
-
-      &:hover {
-        color: #ddd;
-      }
-
-      .el-icon {
         &.el-sub-menu__icon-arrow {
           position: absolute;
           right: 10px;
@@ -352,8 +301,108 @@ watch(
           transform: rotateZ(90deg);
         }
       }
+
     }
   }
 }
+
+//.el-aside {
+//  background-color: #f9fafc;
+//  transition: width 0.3s;
+//  border-right: 1px solid #d2d6de;
+//
+//  :root {
+//    --el-menu-text-color: #333; // 修改字体颜色为深灰色
+//  }
+//
+//  .el-menu-vertical {
+//    border-right: none;
+//    background-color: #f7f8fa;
+//    color: var(--el-menu-text-color); // 使用变量定义的颜色
+//    width: 230px;
+//
+//    :deep(.el-menu-item), :deep(.el-sub-menu__title) {
+//      height: 44px;
+//      line-height: 44px;
+//      padding-left: 20px !important;
+//      color: #444 !important;
+//
+//      &:hover, &.is-active {
+//        background-color: #f4f4f5;
+//        color: #000 !important;
+//      }
+//
+//      .el-icon {
+//        width: 20px;
+//        height: 20px;
+//        margin-right: 10px;
+//        text-align: center;
+//        font-size: 16px;
+//      }
+//    }
+//
+//    :deep(.el-sub-menu) {
+//      &.is-active > .el-sub-menu__title {
+//        color: #409EFF;
+//      }
+//    }
+//  }
+//}
+//
+//:deep(.el-menu--popup) {
+//  min-width: 200px !important;
+//  background-color: #304156;
+//
+//  .el-menu-item {
+//    height: 44px !important;
+//    line-height: 44px !important;
+//    padding: 0 15px !important;
+//
+//    &:hover, &.is-active {
+//      background-color: #f4f4f5;
+//      color: #000 !important;
+//    }
+//  }
+//}
+//
+//:deep(.el-popper) {
+//  border: none !important;
+//  padding: 0 !important;
+//  margin: 0 !important;
+//
+//  .el-menu {
+//    border: none !important;
+//    margin: 0 !important;
+//    padding: 0 !important;
+//    background: #f4f4f5;
+//  }
+//}
+//
+//
+//:deep(.el-sub-menu) {
+//  &.is-active {
+//    .el-menu {
+//      background: #f4f4f5 !important;
+//
+//      .el-menu-item {
+//        background: #f4f4f5 !important;
+//      }
+//    }
+//  }
+//}
+//
+//
+//:deep(.el-sub-menu__title), :deep(.el-menu-item) {
+//  i.fa {
+//    display: inline-block;
+//    width: 20px;
+//  }
+//
+//  * {
+//    vertical-align: middle;
+//  }
+//}
+//
+
 
 </style>
