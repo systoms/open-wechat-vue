@@ -254,55 +254,57 @@ watch(
   &:not(.el-aside-collapse) {
     width: var(--aside-width);
   }
+}
 
-  .el-menu.el-menu-vertical {
-    border-right: none;
+.el-menu-vertical, .el-menu--vertical {
+  border-right: none;
 
-    .el-menu-item-styles() {
-      height: 44px;
-      line-height: 44px;
-      padding-left: 20px !important;
-      color: #444 !important;
+  .el-menu-item-styles() {
+    height: 44px;
+    line-height: 44px;
+    padding-left: 20px !important;
+    color: #444 !important;
+  }
+
+  .el-menu-item, .el-sub-menu :deep(.el-sub-menu__title) {
+    height: 44px;
+    display: block;
+    padding: 12px 5px 12px 15px;
+    position: relative;
+    line-height: unset;
+
+    * {
+      vertical-align: middle;
     }
 
-    .el-menu-item, .el-sub-menu :deep(.el-sub-menu__title) {
-      height: 44px;
-      display: block;
-      padding: 12px 5px 12px 15px;
-      position: relative;
-      line-height: unset;
-      * {
-        vertical-align: middle;
-      }
-      i.fa {
-        display: inline-block;
-        width: 20px;
-      }
-
-      &:hover, &.is-active {
-        background-color: #f4f4f5;
-      }
-
-      .el-icon {
-        width: 20px;
-        height: 20px;
-        margin-right: 10px;
-        text-align: center;
-        font-size: 16px;
-
-        &.el-sub-menu__icon-arrow {
-          position: absolute;
-          right: 10px;
-          font-size: 14px;
-          top: 50%;
-          margin-top: -7px;
-          width: unset;
-          height: unset;
-          transform: rotateZ(90deg);
-        }
-      }
-
+    i.fa {
+      display: inline-block;
+      width: 20px;
     }
+
+    &:hover, &.is-active {
+      background-color: #f4f4f5;
+    }
+
+    .el-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      text-align: center;
+      font-size: 16px;
+
+      &.el-sub-menu__icon-arrow {
+        position: absolute;
+        right: 10px;
+        font-size: 14px;
+        top: 50%;
+        margin-top: -7px;
+        width: unset;
+        height: unset;
+        transform: rotateZ(90deg);
+      }
+    }
+
   }
 }
 
